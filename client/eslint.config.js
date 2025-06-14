@@ -2,9 +2,10 @@ import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
-import { defineConfig } from "eslint/config";
+import { defineConfig, globalIgnores } from "eslint/config";
 
 const config = defineConfig([
+  globalIgnores([".react-router/*"]),
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     extends: ["js/recommended"],
@@ -17,6 +18,10 @@ const config = defineConfig([
   tseslint.configs.strict,
   tseslint.configs.stylistic,
   pluginReact.configs.flat.recommended,
+  {
+    files: ["**/*.tsx"],
+    rules: { "react/react-in-jsx-scope": "off" },
+  },
 ]);
 
 export default config;
