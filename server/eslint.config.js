@@ -13,5 +13,6 @@ export default defineConfig([
     files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
     languageOptions: { globals: globals.node },
   },
-  tseslint.configs.recommended,
+  tseslint.configs.strict,
+  tseslint.configs.stylistic,
 ]);

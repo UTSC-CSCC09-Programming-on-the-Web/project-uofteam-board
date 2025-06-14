@@ -14,7 +14,8 @@ const config = defineConfig([
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     languageOptions: { globals: globals.browser },
   },
-  tseslint.configs.recommended,
+  tseslint.configs.strict,
+  tseslint.configs.stylistic,
   pluginReact.configs.flat.recommended,
 ]);
 
