@@ -22,8 +22,10 @@ export default function Home() {
           enhance artwork together.
         </p>
         <div className="flex gap-4 mt-8">
-          <Button label="Sign up" onClick={() => navigate("/signup")} />
-          <Button label="Log in" onClick={() => navigate("/login")} variant="neutral" />
+          <Button onClick={() => navigate("/signup")}>Sign up</Button>
+          <Button onClick={() => navigate("/login")} variant="neutral">
+            Log in
+          </Button>
         </div>
       </div>
     </div>
