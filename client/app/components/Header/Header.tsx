@@ -30,7 +30,7 @@ function Header({ links, buttons }: HeaderProps) {
           <Link to="/">
             <h1 className="text-xl md:text-2xl font-extrabold">
               <span className="underline underline-offset-6">UofTeam Board</span>
-              <PiPencilDuotone className="inline text-3xl" />
+              <PiPencilDuotone className="inline text-3xl md:text-4xl" />
             </h1>
           </Link>
           <button
