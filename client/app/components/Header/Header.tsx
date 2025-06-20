@@ -29,7 +29,9 @@ function Header({ links, buttons }: HeaderProps) {
         <div className="flex items-center pl-4 md:pr-4 justify-between h-[56px] md:h-[72px]">
           <Link to="/">
             <h1 className="text-xl md:text-2xl font-extrabold">
-              <span className="underline underline-offset-6">UofTeam Board</span>
+              <span className="underline underline-offset-6 decoration-blue-900">
+                UofTeam Board
+              </span>
               <PiPencilDuotone className="inline text-3xl md:text-4xl" />
             </h1>
           </Link>
