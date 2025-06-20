@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, NavLink } from "react-router";
 import { FiMenu } from "react-icons/fi";
 import { PiPencilDuotone } from "react-icons/pi";
 import { Button, type ButtonProps } from "../Button";
@@ -48,11 +48,15 @@ function Header({ links, buttons }: HeaderProps) {
             open ? "flex" : "hidden",
           )}
         >
-          <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-3">
+          <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-4">
             {links.map((x) => (
-              <Link key={x.to} to={x.to}>
+              <NavLink
+                key={x.to}
+                to={x.to}
+                className={({ isActive }) => clsx(isActive && "font-bold")}
+              >
                 {x.label}
-              </Link>
+              </NavLink>
             ))}
           </div>
           <div className="flex flex-col gap-2 pt-4 md:flex-row md:pt-0">
