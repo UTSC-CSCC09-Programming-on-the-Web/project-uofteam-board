@@ -20,6 +20,11 @@ export default function Layout() {
             variant: "neutral",
             onClick: () => navigate("/account"),
           },
+          {
+            label: "Logout",
+            variant: "neutral",
+            onClick: () => navigate("/logout"),
+          }
         ]}
       />
       {navigation.state === "loading" && (

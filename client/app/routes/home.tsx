@@ -24,7 +24,7 @@ export default function Home() {
         <div className="flex gap-4 mt-10">
           <Button
             icon={<AiFillGoogleCircle size="1.3em" />}
-            onClick={() => navigate("/boards/mine")}
+            onClick={() => navigate("/login")}
           >
             Log in with Google
           </Button>
