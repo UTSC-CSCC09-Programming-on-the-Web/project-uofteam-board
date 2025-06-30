@@ -22,10 +22,7 @@ export default function Home() {
           enhance artwork together.
         </p>
         <div className="flex gap-4 mt-10">
-          <Button
-            icon={<AiFillGoogleCircle size="1.3em" />}
-            onClick={() => navigate("/boards/mine")}
-          >
+          <Button icon={<AiFillGoogleCircle size="1.3em" />} onClick={() => navigate("/dashboard")}>
             Log in with Google
           </Button>
         </div>

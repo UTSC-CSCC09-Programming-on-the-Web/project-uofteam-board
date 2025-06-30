@@ -11,8 +11,8 @@ export default function Layout() {
     <div className="min-h-screen bg-yellow-50">
       <Header
         links={[
-          { to: "/boards/mine", label: "My boards" },
-          { to: "/boards/public", label: "Public boards" },
+          { to: "/dashboard", label: "Dashboard" },
+          { to: "/account", label: "Account" },
         ]}
         buttons={[
           {
@@ -23,7 +23,7 @@ export default function Layout() {
         ]}
       />
       {navigation.state === "loading" && (
-        <div className="fixed top-0 left-0 right-0 h-1">
+        <div className="fixed top-0 left-0 right-0 h-1 bg-yellow-800/10">
           <div
             className={clsx(
               "h-full w-1/3 bg-gradient-to-r from-transparent via-yellow-800 to-transparent",
