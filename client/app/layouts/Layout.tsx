@@ -1,10 +1,11 @@
 import clsx from "clsx";
-import { Outlet, useNavigate, useNavigation } from "react-router";
+import { Outlet, useNavigation } from "react-router";
 import { Header } from "~/components";
+import { API } from "~/services";
+
 import styles from "./Layout.module.css";
 
 export default function Layout() {
-  const navigate = useNavigate();
   const navigation = useNavigation();
 
   return (
@@ -16,9 +17,9 @@ export default function Layout() {
         ]}
         buttons={[
           {
-            label: "Account",
+            label: "Sign out",
             variant: "neutral",
-            onClick: () => navigate("/account"),
+            onClick: () => (window.location.href = API.getLogoutRedirectUrl()),
           },
         ]}
       />
