@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
-import type { Route } from "./+types/EditBoard";
+import type { Route } from "../EditBoard/+types/EditBoard";
 import type { Board } from "~/types";
 import { API } from "~/services";
 

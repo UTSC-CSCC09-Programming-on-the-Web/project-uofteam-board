@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
-import type { Route } from "./+types/EditBoard";
 import type { User } from "~/types";
 import { API } from "~/services";
 
@@ -9,7 +8,7 @@ export function meta() {
   return [{ title: "Account" }];
 }
 
-export default function Account({ params }: Route.ComponentProps) {
+export default function Account() {
   const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
 
@@ -24,7 +23,7 @@ export default function Account({ params }: Route.ComponentProps) {
 
       setUser(res.data);
     })();
-  }, [params.bid]);
+  }, []);
 
   return user ? (
     <>
