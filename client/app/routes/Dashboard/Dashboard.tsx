@@ -77,9 +77,9 @@ export default function Dashboard() {
   };
 
   return (
-    <>
+    <div className="container mx-auto px-4 pt-8 pb-16">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl md:text-2xl font-extrabold text-blue-800">My boards</h1>
+        <h1 className="text-xl md:text-2xl font-extrabold text-blue-800">Dashboard</h1>
         <Button icon={<FiPlus />} size="sm" onClick={onNewBoard} loading={creatingNewBoard}>
           New board
         </Button>
@@ -146,6 +146,6 @@ export default function Dashboard() {
           )}
         </div>
       )}
-    </>
+    </div>
   );
 }

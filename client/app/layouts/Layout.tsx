@@ -33,9 +33,7 @@ export default function Layout() {
           />
         </div>
       )}
-      <div className="container mx-auto px-4 pt-8 pb-16">
-        <Outlet />
-      </div>
+      <Outlet />
     </div>
   );
 }

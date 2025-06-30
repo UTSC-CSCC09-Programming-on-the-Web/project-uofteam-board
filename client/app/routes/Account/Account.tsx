@@ -25,16 +25,20 @@ export default function Account() {
     })();
   }, []);
 
-  return user ? (
-    <>
-      <p>Loaded user</p>
-      <div className="mt-4 flex flex-col gap-2">
-        <p>ID: {user.id}</p>
-        <p>Name: {user.name}</p>
-        <p>Email: {user.email}</p>
-      </div>
-    </>
-  ) : (
-    <p>Loading user...</p>
+  return (
+    <div className="container mx-auto px-4 pt-8 pb-16">
+      {user ? (
+        <>
+          <p>Loaded user</p>
+          <div className="mt-4 flex flex-col gap-2">
+            <p>ID: {user.id}</p>
+            <p>Name: {user.name}</p>
+            <p>Email: {user.email}</p>
+          </div>
+        </>
+      ) : (
+        <p>Loading user...</p>
+      )}
+    </div>
   );
 }
