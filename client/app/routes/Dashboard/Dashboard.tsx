@@ -18,6 +18,7 @@ export default function Dashboard() {
   const [query, setQuery] = useState("");
   const [boards, setBoards] = useState<Board[]>([]);
   const [boardsLoading, setBoardsLoading] = useState(false);
+  const [creatingNewBoard, setCreatingNewBoard] = useState(false);
   const [lastPaginatedResponse, setLastPaginatedResponse] = useState<Paginated<Board> | null>(null);
 
   const latestReqID = useRef(0);
@@ -29,9 +30,12 @@ export default function Dashboard() {
       if (reqID !== latestReqID.current) return;
 
       if (res.error !== null) {
-        if (res.status === 401) navigate("/");
-        else alert(`Error fetching boards: ${res.error}`);
-        setBoardsLoading(false);
+        if (res.status === 401) {
+          navigate("/");
+        } else {
+          alert(`Error fetching boards: ${res.error}`);
+          setBoardsLoading(false);
+        }
         return;
       }
 
@@ -59,11 +63,23 @@ export default function Dashboard() {
     setBoardsLoading(false);
   };
 
+  const onNewBoard = async () => {
+    setCreatingNewBoard(true);
+    const res = await API.createBoard();
+    setCreatingNewBoard(false);
+    if (res.error !== null) {
+      alert(`Error creating new board: ${res.error}`);
+      return;
+    }
+
+    navigate(`/boards/${res.data.id}`);
+  };
+
   return (
     <>
       <div className="flex items-center justify-between">
         <h1 className="text-xl md:text-2xl font-extrabold text-blue-800">My boards</h1>
-        <Button icon={<FiPlus />} size="sm">
+        <Button icon={<FiPlus />} size="sm" onClick={onNewBoard} loading={creatingNewBoard}>
           New board
         </Button>
       </div>
@@ -81,7 +97,14 @@ export default function Dashboard() {
                   ? "Try changing your search query or creating a new board."
                   : "Create a new board to get started!"}
               </p>
-              <Button icon={<FiPlus />} size="sm" variant="neutral" className="mt-6">
+              <Button
+                icon={<FiPlus />}
+                size="sm"
+                variant="neutral"
+                className="mt-6"
+                onClick={onNewBoard}
+                loading={creatingNewBoard}
+              >
                 New board
               </Button>
             </>
