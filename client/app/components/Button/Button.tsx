@@ -13,10 +13,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "text-blue-800 bg-blue-100 border-blue-800 shadow-blue-950/20",
-  secondary: "text-yellow-800 bg-yellow-100 border-yellow-800 shadow-yellow-950/20",
-  neutral: "text-gray-800 bg-gray-200 border-gray-800 shadow-gray-950/20",
-  danger: "text-red-900 bg-red-200 border-red-800 shadow-red-950/20",
+  primary: "text-blue-800 bg-blue-100 border-blue-800 shadow-blue-950/20 hover:bg-blue-200",
+  secondary:
+    "text-yellow-800 bg-yellow-100 border-yellow-800 shadow-yellow-950/20 hover:bg-yellow-200",
+  neutral: "text-gray-800 bg-gray-200 border-gray-800 shadow-gray-950/20 hover:bg-gray-300",
+  danger: "text-red-900 bg-red-200 border-red-800 shadow-red-950/20 hover:bg-red-300",
 };
 
 const variantDisabledClasses: Record<ButtonVariant, string> = {
