@@ -1,4 +1,5 @@
 import React, { type ReactNode } from "react";
+import { Spinner } from "../Spinner";
 import clsx from "clsx";
 
 type ButtonVariant = "primary" | "secondary" | "neutral" | "danger";
@@ -58,9 +59,7 @@ function Button({
       )}
       {...rest}
     >
-      {loading && (
-        <div className="size-[1em] border-[.15em] rounded-full animate-spin border-current/25 border-t-current/75" />
-      )}
+      {loading && <Spinner className="size-[1em] border-[.15em]" />}
       {!loading && icon}
       {children}
     </button>
