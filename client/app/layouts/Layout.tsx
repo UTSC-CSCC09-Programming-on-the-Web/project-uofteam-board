@@ -9,7 +9,7 @@ export default function Layout() {
   const navigation = useNavigation();
 
   return (
-    <div className="min-h-screen bg-yellow-50">
+    <div className="min-h-screen bg-yellow-50 flex flex-col">
       <Header
         links={[
           { to: "/dashboard", label: "Dashboard" },
