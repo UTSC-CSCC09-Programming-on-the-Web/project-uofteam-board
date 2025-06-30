@@ -1,10 +1,12 @@
-import { FiPlus } from "react-icons/fi";
-import { PiStackDuotone } from "react-icons/pi";
-import { BoardCard, Button } from "~/components";
-import { useNavigate } from "react-router";
-import { API } from "~/services";
 import { useEffect, useRef, useState } from "react";
+import { PiStackDuotone } from "react-icons/pi";
+import { FiPlus } from "react-icons/fi";
+import { useNavigate } from "react-router";
+
+import { API } from "~/services";
+import { BoardCard, Button } from "~/components";
 import { type Paginated, type Board } from "~/types";
+
 import { QueryInput } from "./QueryInput";
 
 export function meta() {
@@ -27,7 +29,9 @@ export default function Dashboard() {
       if (reqID !== latestReqID.current) return;
 
       if (res.error !== null) {
-        navigate(API.getLoginRedirectUrl());
+        if (res.status === 401) navigate(API.getLoginRedirectUrl());
+        else alert(`Error fetching boards: ${res.error}`);
+        setBoardsLoading(false);
         return;
       }
 
@@ -44,7 +48,11 @@ export default function Dashboard() {
     const reqID = ++latestReqID.current;
     const res = await API.getBoards(lastPaginatedResponse.nextPage, lastPaginatedResponse.limit, query); // prettier-ignore
     if (reqID !== latestReqID.current) return;
-    if (res.error !== null) throw new Error(res.error);
+    if (res.error !== null) {
+      alert(`Error loading more boards: ${res.error}`);
+      setBoardsLoading(false);
+      return;
+    }
 
     setLastPaginatedResponse(res.data);
     setBoards((prev) => [...prev, ...res.data.data]);
