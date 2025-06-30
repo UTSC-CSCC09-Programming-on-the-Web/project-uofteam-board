@@ -1,4 +1,4 @@
-import { Chip } from "../Chip";
+import { Chip } from "~/components";
 
 interface BoardCardChipProps {
   label: string;

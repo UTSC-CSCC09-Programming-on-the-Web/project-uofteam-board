@@ -4,10 +4,11 @@ import { FiPlus } from "react-icons/fi";
 import { useNavigate } from "react-router";
 
 import { API } from "~/services";
-import { BoardCard, Button } from "~/components";
+import { Button } from "~/components";
 import { type Paginated, type Board } from "~/types";
 
 import { QueryInput } from "./QueryInput";
+import { BoardCard } from "./BoardCard";
 
 export function meta() {
   return [{ title: "My Boards" }];
