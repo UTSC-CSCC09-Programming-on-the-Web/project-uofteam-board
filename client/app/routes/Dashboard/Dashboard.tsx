@@ -29,7 +29,7 @@ export default function Dashboard() {
       if (reqID !== latestReqID.current) return;
 
       if (res.error !== null) {
-        if (res.status === 401) navigate(API.getLoginRedirectUrl());
+        if (res.status === 401) navigate("/");
         else alert(`Error fetching boards: ${res.error}`);
         setBoardsLoading(false);
         return;
