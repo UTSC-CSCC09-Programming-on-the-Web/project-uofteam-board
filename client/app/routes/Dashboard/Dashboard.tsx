@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { PiStackDuotone } from "react-icons/pi";
+import { MdDraw } from "react-icons/md";
 import { FiPlus } from "react-icons/fi";
 import { useNavigate } from "react-router";
 
@@ -86,14 +86,14 @@ export default function Dashboard() {
       </div>
       <QueryInput loading={boardsLoading} onChange={setQuery} className="mt-4" />
       {boards.length === 0 ? (
-        <div className="mt-16 flex flex-col items-center text-center text-gray-500">
-          <PiStackDuotone className="size-12 text-gray-300" />
-          <p className="mt-4 mb-2 text-xl font-medium">
+        <div className="mt-16 flex flex-col items-center text-center">
+          <MdDraw className="size-24 rotate-30 text-yellow-800/25" />
+          <p className="mt-4 mb-2 text-xl font-medium text-yellow-950/70">
             {boardsLoading ? "Loading boards..." : "No boards found."}
           </p>
           {!boardsLoading && (
             <>
-              <p className="text-gray-400">
+              <p className="text-yellow-950/60">
                 {query
                   ? "Try changing your search query or creating a new board."
                   : "Create a new board to get started!"}
