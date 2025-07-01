@@ -1,7 +1,3 @@
-export type Response<T> =
-  | { status: number; error: string; data: null }
-  | { status: number; error: null; data: T };
-
 export interface Board {
   id: number;
   name: string;

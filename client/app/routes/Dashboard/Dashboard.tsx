@@ -64,9 +64,10 @@ export default function Dashboard() {
     setBoardsLoading(false);
   };
 
+  // TODO: add option to choose board name
   const onNewBoard = async () => {
     setCreatingNewBoard(true);
-    const res = await API.createBoard();
+    const res = await API.createBoard((Math.random() + 1).toString(36).substring(2)); 
     setCreatingNewBoard(false);
     if (res.error !== null) {
       alert(`Error creating new board: ${res.error}`);
