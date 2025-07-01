@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import React, { useState } from "react";
 import { Outlet, useNavigation } from "react-router";
 import { Header } from "~/components";
 import { API } from "~/services";
@@ -7,6 +8,7 @@ import styles from "./Layout.module.css";
 
 export default function Layout() {
   const navigation = useNavigation();
+  const [signingOut, setSigningOut] = useState(false);
 
   return (
     <div className="min-h-screen bg-yellow-50 flex flex-col">
@@ -19,7 +21,18 @@ export default function Layout() {
           {
             label: "Sign out",
             variant: "neutral",
-            onClick: () => (window.location.href = API.getLogoutRedirectUrl()),
+            loading: signingOut,
+            onClick: () => {
+              setSigningOut(true);
+              API.postLogout()
+                .then(() => {
+                  window.location.href = "/";
+                })
+                .catch((err) => {
+                  setSigningOut(false);
+                  console.error("Logout failed:", err);
+                });
+            },
           },
         ]}
       />

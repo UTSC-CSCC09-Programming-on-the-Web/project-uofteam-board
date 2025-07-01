@@ -32,7 +32,7 @@ class MockApiService {
     this.boards = [];
     for (let i = 1; i <= 16; i++) {
       this.boards.push({
-        id: i.toString(),
+        id: i,
         name: `Board ${i}`,
         createdAt: now,
         updatedAt: now,
@@ -48,7 +48,7 @@ class MockApiService {
 
   public getLoginRedirectUrl(): string {
     this.currentUser = {
-      id: "1",
+      id: 1,
       name: "John Doe",
       email: "name@domain.com",
     };
@@ -104,7 +104,7 @@ class MockApiService {
       return { status: 401, error: "Authentication required to create board", data: null };
 
     const newBoard: Board = {
-      id: (this.boards.length + 1).toString(),
+      id: this.boards.length + 1,
       name: `Board ${this.boards.length + 1}`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -115,7 +115,7 @@ class MockApiService {
     return { status: 201, error: null, data: newBoard };
   }
 
-  public async getBoard(id: string): Promise<Response<Board>> {
+  public async getBoard(id: number): Promise<Response<Board>> {
     await this.simulateDelay();
     if (!this.currentUser)
       return { status: 401, error: "Authentication required to view board details", data: null };

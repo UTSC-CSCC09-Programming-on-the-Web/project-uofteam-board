@@ -16,8 +16,8 @@ class ApiService {
     return `${this.client.defaults.baseURL}/auth/login`;
   }
 
-  public getLogoutRedirectUrl(): string {
-    return `${this.client.defaults.baseURL}/auth/logout`;
+  public postLogout(): Promise<Response<User>> {
+    return this.post("/auth/logout");
   }
 
   public getMe(): Promise<Response<User>> {
@@ -32,13 +32,15 @@ class ApiService {
     return this.get("/boards", { params: { page, limit, query } });
   }
 
-  public createBoard(): Promise<Response<Board>> {
-    return this.post("/boards");
+  public createBoard(name: string): Promise<Response<Board>> {
+    return this.post("/boards", { name });
   }
 
   public getBoard(id: string): Promise<Response<Board>> {
     return this.get(`/boards/${id}`);
   }
+
+  // --------------------------------------------------------------------------------------------------------------------
 
   private get<T>(url: string, config?: AxiosRequestConfig): Promise<Response<T>> {
     return this.request<T>({ ...config, method: "get", url });
@@ -74,5 +76,5 @@ class ApiService {
   }
 }
 
-const API = new ApiService(process.env.API_BASE_URL || "http://localhost:3000/api");
+const API = new ApiService("http://localhost:3000/api");
 export { API };

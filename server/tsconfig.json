@@ -2,7 +2,9 @@
   "extends": "@tsconfig/node22/tsconfig.json",
   "compilerOptions": {
     "rootDir": "./app",
-    "outDir": "./build"
+    "outDir": "./build",
+    "noEmit": true,
+    "allowImportingTsExtensions": true
   },
   "include": ["app/**/*.ts"],
   "exclude": ["dist"]
