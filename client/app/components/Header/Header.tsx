@@ -27,7 +27,7 @@ function Header({ links, buttons }: HeaderProps) {
     <header className="bg-yellow-100 border border-yellow-800/20 text-blue-800">
       <div className="container mx-auto flex flex-col md:flex-row">
         <div className="flex items-center pl-4 md:pr-4 justify-between h-[56px] md:h-[72px]">
-          <Link to="/">
+          <Link to="/dashboard">
             <h1 className="text-xl md:text-2xl font-extrabold">
               <span className="underline underline-offset-6 decoration-blue-900">
                 UofTeam Board
