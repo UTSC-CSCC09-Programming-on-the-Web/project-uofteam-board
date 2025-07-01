@@ -25,5 +25,5 @@ Boards.init(
     sequelize,
     modelName: "Boards",
     timestamps: true,
-  }
+  },
 );

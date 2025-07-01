@@ -40,7 +40,7 @@ class ApiService {
     return this.get(`/boards/${id}`);
   }
 
-// --------------------------------------------------------------------------------------------------------------------
+  // --------------------------------------------------------------------------------------------------------------------
 
   private get<T>(url: string, config?: AxiosRequestConfig): Promise<Response<T>> {
     return this.request<T>({ ...config, method: "get", url });

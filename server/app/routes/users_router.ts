@@ -36,7 +36,6 @@ usersRouter.get("/login/callback", async (req, res) => {
   res.redirect(`${links.clientUrl}/dashboard`);
 });
 
-
 usersRouter.get("/login", async (req, res) => {
   const redirectUrl = `${links.authUrl}?${authParams}`;
   res.redirect(redirectUrl);
@@ -51,6 +50,6 @@ usersRouter.post("/logout", checkAuth, async (req, res) => {
   res.json({
     id: sessionUser.id,
     name: sessionUser.name,
-    email: sessionUser.email
+    email: sessionUser.email,
   } as User);
 });

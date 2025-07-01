@@ -22,7 +22,7 @@ export default function Layout() {
             label: "Sign out",
             variant: "neutral",
             loading: signingOut,
-            onClick: (() => {
+            onClick: () => {
               setSigningOut(true);
               API.postLogout()
                 .then(() => {
@@ -32,7 +32,7 @@ export default function Layout() {
                   setSigningOut(false);
                   console.error("Logout failed:", err);
                 });
-            }),
+            },
           },
         ]}
       />

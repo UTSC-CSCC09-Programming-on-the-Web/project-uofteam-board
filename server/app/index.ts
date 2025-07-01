@@ -15,17 +15,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(logger);
 
-app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    credentials: true,
+  }),
+);
 
 app.use(
   session({
     secret: process.env.SECRET_KEY || "default_secret_key",
     resave: false,
     saveUninitialized: true,
-  })
+  }),
 );
 
 try {

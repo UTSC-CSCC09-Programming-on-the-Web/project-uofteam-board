@@ -1,12 +1,12 @@
 import express from "express";
 import { Boards } from "../models/Boards.ts";
-import type {Board, Paginated } from "../types/api.ts";
+import type { Board, Paginated } from "../types/api.ts";
 import { checkAuth } from "../middleware/checkAuth.ts";
 import { Op } from "sequelize";
 
 export const boardsRouter = express.Router();
 
-boardsRouter.post( "/", checkAuth, async (req, res) => {
+boardsRouter.post("/", checkAuth, async (req, res) => {
   const { name } = req.body;
   if (!name) {
     res.status(400).json({ status: 400, error: "Board name is required", data: null });
@@ -36,9 +36,7 @@ boardsRouter.get("/", checkAuth, async (req, res) => {
   const limit = parseInt(req.query.limit as string) || 8;
   const query = (req.query.query as string) || "";
 
-  const where = query
-    ? { name: { [Op.like]: `%${query}%` } }
-    : {};
+  const where = query ? { name: { [Op.like]: `%${query}%` } } : {};
 
   const { count: totalItems, rows } = await Boards.findAndCountAll({
     where,

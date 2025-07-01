@@ -29,5 +29,5 @@ Users.init(
     sequelize,
     modelName: "Users",
     timestamps: false,
-  }
+  },
 );
