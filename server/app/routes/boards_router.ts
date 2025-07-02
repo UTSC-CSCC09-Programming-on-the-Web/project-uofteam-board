@@ -9,16 +9,12 @@ export const boardsRouter = express.Router();
 boardsRouter.post("/", checkAuth, async (req, res) => {
   const { name } = req.body;
   if (!name) {
-    res.status(400).json({ status: 400, error: "Board name is required", data: null });
+    res.status(400).json({ error: "Board name is required" });
     return;
   }
   const board = await Boards.findOne({ where: { name } });
   if (board) {
-    res.status(422).json({
-      status: 422,
-      error: "Board with this name already exists",
-      data: null,
-    });
+    res.status(422).json({ error: "Board with this name already exists" });
     return;
   }
   const newBoardInstance = await Boards.create({ name });
@@ -28,7 +24,7 @@ boardsRouter.post("/", checkAuth, async (req, res) => {
     name: newBoard.name,
     createdAt: newBoard.createdAt.toISOString(),
     updatedAt: newBoard.updatedAt.toISOString(),
-  } as Board);
+  } satisfies Board);
 });
 
 boardsRouter.get("/", checkAuth, async (req, res) => {
@@ -63,14 +59,14 @@ boardsRouter.get("/", checkAuth, async (req, res) => {
         createdAt: b.createdAt.toISOString(),
         updatedAt: b.updatedAt.toISOString(),
       })),
-  } as Paginated<Board>);
+  } satisfies Paginated<Board>);
 });
 
 boardsRouter.get("/:id", checkAuth, async (req, res) => {
   const { id } = req.params;
   const board = await Boards.findByPk(id);
   if (!board) {
-    res.status(404).json({ status: 404, error: "Board not found", data: null });
+    res.status(404).json({ error: "Board not found" });
     return;
   }
   const boardData = board.get({ plain: true });
@@ -79,5 +75,5 @@ boardsRouter.get("/:id", checkAuth, async (req, res) => {
     name: boardData.name,
     createdAt: boardData.createdAt.toISOString(),
     updatedAt: boardData.updatedAt.toISOString(),
-  } as Board);
+  } satisfies Board);
 });
