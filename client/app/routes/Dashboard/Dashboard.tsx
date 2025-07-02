@@ -11,7 +11,7 @@ import { QueryInput } from "./QueryInput";
 import { BoardCard } from "./BoardCard";
 
 export function meta() {
-  return [{ title: "My Boards" }];
+  return [{ title: "Dashboard" }];
 }
 
 export default function Dashboard() {
