@@ -28,9 +28,9 @@ export default function EditBoard({ params }: Route.ComponentProps) {
 
   return board ? (
     <>
-      <p>Loaded board {board.id}</p>
+      <p>Loaded board</p>
       <div className="mt-4 flex flex-col gap-2">
-        <p>ID: {board.name}</p>
+        <p>ID: {board.id}</p>
         <p>Name: {board.name}</p>
         <p>Created at: {board.createdAt}</p>
         <p>Updated at: {board.updatedAt}</p>
