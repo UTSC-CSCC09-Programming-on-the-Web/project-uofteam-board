@@ -6,7 +6,7 @@ Start PostgreSQL server first
 
 ./server/.env
 ```Bash
-PORT=3000
+PORT="3000"
 SECRET_KEY="<secret-key>"
 GOOGLE_CLIENT_ID="<client-id>"
 GOOGLE_CLIENT_SECRET="<client-secret>"
@@ -17,7 +17,7 @@ DB_USER="board"
 DB_PASS="1234"
 DB_NAME="teamboard"
 DB_HOST="localhost"
-DB_PORT=5432
+DB_PORT="5432"
 ```
 
 ## Team members

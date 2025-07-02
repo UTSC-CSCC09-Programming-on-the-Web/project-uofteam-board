@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "dev": "tsx --watch --env-file .env ./app/index.ts",
-    "start": "node --env-file .env ./build/index.js",
+    "dev": "tsx --watch --env-file=.env ./app/index.ts",
+    "start": "node --env-file=.env ./build/index.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
