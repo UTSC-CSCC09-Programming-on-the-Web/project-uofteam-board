@@ -2,6 +2,8 @@
 
 ## Setup
 
+Start PostgreSQL server first
+
 ./server/.env
 ```Bash
 PORT=3000
@@ -10,6 +12,12 @@ GOOGLE_CLIENT_ID="<client-id>"
 GOOGLE_CLIENT_SECRET="<client-secret>"
 REDIRECT_URL="http://localhost:3000/api/auth/login/callback"
 CLIENT_URL="http://localhost:5173"
+
+DB_USER="board"
+DB_PASS="1234"
+DB_NAME="teamboard"
+DB_HOST="localhost"
+DB_PORT=5432
 ```
 
 ## Team members
