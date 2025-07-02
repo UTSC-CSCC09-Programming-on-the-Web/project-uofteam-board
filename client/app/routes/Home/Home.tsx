@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router";
 import { PiPencilDuotone } from "react-icons/pi";
 import { AiFillGoogleCircle } from "react-icons/ai";
 import { Button } from "~/components";
@@ -8,6 +9,8 @@ export function meta() {
 }
 
 export default function Home() {
+  const [query] = useSearchParams();
+
   return (
     <div className="min-h-screen bg-yellow-50 flex items-center">
       <div className="container mx-auto px-4 flex flex-col items-center text-center max-w-[768px]">
@@ -19,14 +22,18 @@ export default function Home() {
           A real-time collaborative canvas with AI-powered drawing completion—create, share, and
           enhance artwork together.
         </p>
-        <div className="flex gap-4 mt-10">
-          <Button
-            icon={<AiFillGoogleCircle size="1.3em" />}
-            onClick={() => (window.location.href = API.getLoginRedirectUrl())}
-          >
-            Log in with Google
-          </Button>
-        </div>
+        <Button
+          icon={<AiFillGoogleCircle size="1.3em" />}
+          onClick={() => (window.location.href = API.getLoginRedirectUrl())}
+          className="mt-10"
+        >
+          Log in with Google
+        </Button>
+        {query.get("error") === "auth_failed" && (
+          <p className="mt-4 text-red-600 text-sm">
+            Login failed. Please try again or contact the project team.
+          </p>
+        )}
       </div>
     </div>
   );
