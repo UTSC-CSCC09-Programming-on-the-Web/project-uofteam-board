@@ -17,7 +17,7 @@ boardsRouter.post("/", checkAuth, async (req, res) => {
     res.status(422).json({ error: "Board with this name already exists" });
     return;
   }
-  const newBoardInstance = await Boards.create({ name });
+  const newBoardInstance = await Boards.create({ ownerId: req.session.user?.id, name });
   const newBoard = newBoardInstance.get({ plain: true });
   res.status(201).json({
     id: newBoard.boardId,
@@ -32,10 +32,15 @@ boardsRouter.get("/", checkAuth, async (req, res) => {
   const limit = parseInt(req.query.limit as string) || 8;
   const query = (req.query.query as string) || "";
 
-  const where = query ? { name: { [Op.like]: `%${query}%` } } : {};
-
   const { count: totalItems, rows } = await Boards.findAndCountAll({
-    where,
+    where: {
+      ownerId: req.session.user?.id,
+      ...(query && {
+        name: {
+          [Op.iLike]: `%${query}%`, // Case insensitive search
+        },
+      }),
+    },
     offset: (page - 1) * limit,
     limit,
     order: [["createdAt", "DESC"]],
