@@ -7,10 +7,6 @@ import { getGoogleAuth, authParams, links } from "#oauth/googleoauth.ts";
 export const usersRouter = Router();
 
 usersRouter.get("/me", checkAuth, async (req, res) => {
-  if (!req.session.user) {
-    res.json({});
-    return;
-  }
   res.json(req.session.user);
 });
 
@@ -18,7 +14,7 @@ usersRouter.get("/login/callback", async (req, res) => {
   const code = req.query.code?.toString();
   const data = await getGoogleAuth(code);
   if (!data) {
-    res.redirect(`${links.clientUrl}/login?error=auth_failed`);
+    res.redirect(`${links.clientUrl}?error=auth_failed`);
     return;
   }
   const { email, name } = data;
@@ -31,7 +27,7 @@ usersRouter.get("/login/callback", async (req, res) => {
     id: user.userId,
     email: user.email,
     name: user.name,
-  } as User;
+  };
 
   res.redirect(`${links.clientUrl}/dashboard`);
 });
@@ -51,5 +47,5 @@ usersRouter.post("/logout", checkAuth, async (req, res) => {
     id: sessionUser.id,
     name: sessionUser.name,
     email: sessionUser.email,
-  } as User);
+  } satisfies User);
 });
