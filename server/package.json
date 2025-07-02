@@ -13,14 +13,14 @@
     "format:fix": "prettier . --write"
   },
   "dependencies": {
+    "@sequelize/postgres": "^7.0.0-alpha.46",
     "cookie": "^1.0.2",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
     "morgan": "^1.10.0",
     "query-string": "^9.2.1",
-    "sequelize": "^6.37.3",
-    "sqlite3": "^5.1.7"
+    "sequelize": "^6.37.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",
