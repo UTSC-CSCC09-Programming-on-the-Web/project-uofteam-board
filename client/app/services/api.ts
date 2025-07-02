@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
 import type { Board, Paginated, Response, User } from "~/types";
+import { config } from "~/config";
 
 class ApiService {
   private readonly client: AxiosInstance;
@@ -40,7 +41,7 @@ class ApiService {
     return this.get(`/boards/${id}`);
   }
 
-  // --------------------------------------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------------------------------------
 
   private get<T>(url: string, config?: AxiosRequestConfig): Promise<Response<T>> {
     return this.request<T>({ ...config, method: "get", url });
@@ -76,5 +77,5 @@ class ApiService {
   }
 }
 
-const API = new ApiService("http://localhost:3000/api");
+const API = new ApiService(config.API_BASE_URL);
 export { API };
