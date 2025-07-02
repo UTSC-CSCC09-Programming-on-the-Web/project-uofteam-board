@@ -1,12 +1,13 @@
 import clsx from "clsx";
-import React, { useState } from "react";
-import { Outlet, useNavigation } from "react-router";
+import { useState } from "react";
+import { Outlet, useNavigate, useNavigation } from "react-router";
 import { Header } from "~/components";
 import { API } from "~/services";
 
 import styles from "./Layout.module.css";
 
 export default function Layout() {
+  const navigate = useNavigate();
   const navigation = useNavigation();
   const [signingOut, setSigningOut] = useState(false);
 
@@ -22,16 +23,17 @@ export default function Layout() {
             label: "Sign out",
             variant: "neutral",
             loading: signingOut,
-            onClick: () => {
+            onClick: async () => {
               setSigningOut(true);
-              API.postLogout()
-                .then(() => {
-                  window.location.href = "/";
-                })
-                .catch((err) => {
-                  setSigningOut(false);
-                  console.error("Logout failed:", err);
-                });
+              const res = await API.postLogout();
+              if (res.error !== null) {
+                alert(`Logout failed: ${res.error}`);
+                setSigningOut(false);
+                return;
+              }
+
+              navigate("/");
+              setSigningOut(false);
             },
           },
         ]}
