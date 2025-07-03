@@ -12,7 +12,7 @@ export default function Layout() {
   const [signingOut, setSigningOut] = useState(false);
 
   return (
-    <div className="min-h-screen bg-yellow-50 flex flex-col">
+    <div className="min-h-screen bg-yellow-50">
       <Header
         links={[
           { to: "/dashboard", label: "Dashboard" },
@@ -48,7 +48,9 @@ export default function Layout() {
           />
         </div>
       )}
-      <Outlet />
+      <div className="container mx-auto px-4 pt-8 pb-16">
+        <Outlet />
+      </div>
     </div>
   );
 }
