@@ -3,11 +3,12 @@ import { useNavigate } from "react-router";
 import { MdArrowBack, MdHelpOutline, MdOutlineCircle, MdOutlineRectangle } from "react-icons/md";
 import { RiPenNibLine } from "react-icons/ri";
 import { TbLine } from "react-icons/tb";
+import { v4 as uuid } from "uuid";
 import clsx from "clsx";
 
 import type { Route } from "./+types/EditBoard";
 import { Button, Spinner } from "~/components";
-import type { Board } from "~/types";
+import type { Board, Path } from "~/types";
 import { API } from "~/services";
 
 import { useSpacePressed } from "./useSpacePressed";
@@ -18,11 +19,12 @@ export function meta() {
   return [{ title: "Edit Board" }];
 }
 
-interface Path {
-  d: string;
-  strokeColor: string;
-  strokeWidth: number;
-  fillColor: string;
+interface PathWithLocal extends Path {
+  // fromLocal is used to indicate if the path was created locally. This is done
+  // so that when the path is sent to the server and the server responds with
+  // the same path, we know to move the local path to the end of the list.
+  // Otherwise, different clients might have different orders of paths.
+  fromLocal?: boolean;
 }
 
 interface Point {
@@ -61,9 +63,11 @@ type BoardState =
       type: "PANNING";
       startPoint: Point;
       startViewBox: ViewBox;
+      path: null;
     }
   | {
       type: "IDLE";
+      path: null;
     };
 
 type ToolType = `${"PEN" | "LINE" | "RECTANGLE" | "CIRCLE"}_TOOL`;
@@ -74,16 +78,16 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   const [board, setBoard] = useState<Board | null>(null);
   const renderCount = useRef(0);
 
-  const [paths, setPaths] = useState<Path[]>([]);
   const [fillColor, setFillColor] = useState("#fff085");
   const [strokeWidth, setStrokeWidth] = useState(4);
   const [strokeColor, setStrokeColor] = useState("#193cb8");
-  const [viewBox, setViewBox] = useState<ViewBox>({ x: 0, y: 0, width: 480, height: 480 });
   const [selectedTool, setSelectedTool] = useState<ToolType>("PEN_TOOL");
+  const [viewBox, setViewBox] = useState<ViewBox>({ x: 0, y: 0, width: 480, height: 480 });
+  const [paths, setPaths] = useState<PathWithLocal[]>([]);
 
   const svgRef = useRef<SVGSVGElement | null>(null);
   const currPathElemRef = useRef<SVGPathElement | null>(null);
-  const boardStateRef = useRef<BoardState>({ type: "IDLE" });
+  const boardStateRef = useRef<BoardState>({ type: "IDLE", path: null });
 
   useEffect(() => {
     renderCount.current += 1;
@@ -101,6 +105,55 @@ export default function EditBoard({ params }: Route.ComponentProps) {
       setBoard(res.data);
     })();
   }, [params.bid]);
+
+  useEffect(
+    () =>
+      API.listenForBoardUpdates(
+        params.bid,
+        (update) => {
+          console.log("Received board update:", update);
+          switch (update.type) {
+            case "CREATE_OR_REPLACE_PATHS":
+              setPaths((prevPaths) => {
+                const prevPathsCopy = [...prevPaths];
+                update.paths.forEach((newPath) => {
+                  const existingIndex = prevPathsCopy.findIndex((p) => p.id === newPath.id);
+                  if (existingIndex === -1) {
+                    prevPathsCopy.push(newPath);
+                    return;
+                  }
+
+                  const existingPath = prevPathsCopy[existingIndex];
+                  if (existingPath.fromLocal) {
+                    // If the existing path was created from local, we make sure to
+                    // delete it and add the new path to the end of the list. This ensures
+                    // that the paths for different clients appear in the exact same order.
+                    prevPathsCopy.splice(existingIndex, 1);
+                    prevPathsCopy.push(newPath);
+                  } else {
+                    prevPathsCopy[existingIndex] = newPath;
+                  }
+                });
+                return prevPathsCopy;
+              });
+              break;
+            case "DELETE_PATHS":
+              setPaths((prevPaths) => prevPaths.filter((path) => !update.ids.includes(path.id)));
+              break;
+            default:
+              [update] satisfies [never];
+              break;
+          }
+        },
+        (error) => {
+          alert(`Error in board updates: ${error.message}`);
+        },
+        (reason) => {
+          alert(`Socket closed: ${reason}`);
+        },
+      ),
+    [params.bid],
+  );
 
   const getEffectiveScale = (): number => {
     if (!svgRef.current) return 1;
@@ -140,40 +193,42 @@ export default function EditBoard({ params }: Route.ComponentProps) {
         type: "PANNING",
         startPoint: { x: e.clientX, y: e.clientY },
         startViewBox: { ...viewBox },
+        path: null,
       };
       return;
     }
 
     const { x, y } = getSvgPoint(e.clientX, e.clientY);
-    const commonPathProps = { strokeColor, strokeWidth, fillColor } satisfies Partial<Path>;
+
+    const commonPathProps = {
+      id: uuid(),
+      strokeColor,
+      strokeWidth,
+      fillColor,
+      fromLocal: true,
+    } satisfies Partial<PathWithLocal>;
+
+    let newPath: PathWithLocal;
     switch (selectedTool) {
       case "PEN_TOOL":
-        {
-          const newPath: Path = { ...commonPathProps, d: `M ${x} ${y} L ${x} ${y}`, fillColor: "none" }; // prettier-ignore
-          boardStateRef.current = { type: "DRAWING_FREEHAND", path: newPath };
-          setPaths((prevPaths) => [...prevPaths, newPath]);
-        }
+        newPath = { ...commonPathProps, d: `M ${x} ${y} L ${x} ${y}`, fillColor: "none" };
+        boardStateRef.current = { type: "DRAWING_FREEHAND", path: newPath };
+        setPaths((prevPaths) => [...prevPaths, newPath]);
         break;
       case "LINE_TOOL":
-        {
-          const newPath: Path = { ...commonPathProps, d: `M ${x} ${y} L ${x} ${y}`, fillColor: "none" }; // prettier-ignore
-          boardStateRef.current = { type: "DRAWING_LINE", path: newPath, startPoint: { x, y } };
-          setPaths((prevPaths) => [...prevPaths, newPath]);
-        }
+        newPath = { ...commonPathProps, d: `M ${x} ${y} L ${x} ${y}`, fillColor: "none" };
+        boardStateRef.current = { type: "DRAWING_LINE", path: newPath, startPoint: { x, y } };
+        setPaths((prevPaths) => [...prevPaths, newPath]);
         break;
       case "RECTANGLE_TOOL":
-        {
-          const newPath: Path = { ...commonPathProps, d: `M ${x} ${y} L ${x} ${y}` };
-          boardStateRef.current = { type: "DRAWING_RECTANGLE", path: newPath, startPoint: { x, y } }; // prettier-ignore
-          setPaths((prevPaths) => [...prevPaths, newPath]);
-        }
+        newPath = { ...commonPathProps, d: `M ${x} ${y} L ${x} ${y}` };
+        boardStateRef.current = { type: "DRAWING_RECTANGLE", path: newPath, startPoint: { x, y } };
+        setPaths((prevPaths) => [...prevPaths, newPath]);
         break;
       case "CIRCLE_TOOL":
-        {
-          const newPath: Path = { ...commonPathProps, d: `M ${x} ${y} A 0 0 0 0 1 ${x} ${y}` };
-          boardStateRef.current = { type: "DRAWING_CIRCLE", path: newPath, startPoint: { x, y } };
-          setPaths((prevPaths) => [...prevPaths, newPath]);
-        }
+        newPath = { ...commonPathProps, d: `M ${x} ${y} A 0 0 0 0 1 ${x} ${y}` };
+        boardStateRef.current = { type: "DRAWING_CIRCLE", path: newPath, startPoint: { x, y } };
+        setPaths((prevPaths) => [...prevPaths, newPath]);
         break;
       default:
         [selectedTool] satisfies [never];
@@ -235,7 +290,6 @@ export default function EditBoard({ params }: Route.ComponentProps) {
 
   const handleDrawingEnd = () => {
     const bs = boardStateRef.current;
-    console.log("Drawing end called", svgRef.current, bs.type);
     if (!svgRef.current || bs.type === "IDLE") return;
 
     if (
@@ -245,14 +299,16 @@ export default function EditBoard({ params }: Route.ComponentProps) {
       bs.type === "DRAWING_CIRCLE"
     ) {
       const newPath = bs.path;
+      API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [newPath] });
       setPaths((prevPaths) => {
         const updatedPaths = [...prevPaths];
-        updatedPaths[updatedPaths.length - 1] = newPath;
+        const existingIndex = updatedPaths.findIndex((p) => p.id === newPath.id);
+        if (existingIndex !== -1) updatedPaths[existingIndex] = newPath;
         return updatedPaths;
       });
     }
 
-    boardStateRef.current = { type: "IDLE" };
+    boardStateRef.current = { type: "IDLE", path: null };
   };
 
   const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
@@ -286,7 +342,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 z-10 p-4">
+      <div className="fixed top-0 left-0 right-0 z-10 p-4 pointer-events-none">
         <div
           className={clsx(
             "flex items-center justify-between p-2",
@@ -294,7 +350,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
             "border-2 border-gray-800/60 rounded-tl-[255px_15px] rounded-tr-[15px_225px] rounded-br-[225px_15px] rounded-bl-[15px_255px]",
           )}
         >
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-8 pointer-events-auto">
             <Button
               icon={<MdArrowBack />}
               onClick={() => navigate("/dashboard")}
@@ -305,7 +361,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
             </Button>
             <h1 className="text-2xl font-bold text-blue-800">Board Name {renderCount.current}</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pointer-events-auto">
             <ToolButton
               label="Pen Tool"
               selected={selectedTool === "PEN_TOOL"}
@@ -335,8 +391,8 @@ export default function EditBoard({ params }: Route.ComponentProps) {
           </div>
         </div>
       </div>
-      <div className="fixed bottom-0 left-0 right-0 z-10 p-4 flex justify-between">
-        <div className="flex gap-2">
+      <div className="fixed bottom-0 left-0 right-0 z-10 p-4 flex justify-between pointer-events-none">
+        <div className="flex gap-2 pointer-events-auto">
           <Button size="sm" onClick={handleZoomIn}>
             +
           </Button>
@@ -344,7 +400,12 @@ export default function EditBoard({ params }: Route.ComponentProps) {
             -
           </Button>
         </div>
-        <Button icon={<MdHelpOutline size="1.3em" />} size="sm">
+        <Button
+          size="sm"
+          onClick={() => alert("TODO")}
+          icon={<MdHelpOutline size="1.3em" />}
+          className="pointer-events-auto"
+        >
           Help
         </Button>
       </div>
@@ -367,7 +428,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
             strokeWidth={path.strokeWidth}
             strokeLinecap="round"
             strokeLinejoin="round"
-            ref={index === paths.length - 1 ? currPathElemRef : null}
+            ref={path.id === boardStateRef.current.path?.id ? currPathElemRef : null}
           />
         ))}
       </svg>

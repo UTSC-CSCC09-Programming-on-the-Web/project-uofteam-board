@@ -1,9 +1,11 @@
+import { io, Socket } from "socket.io-client";
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
-import type { Board, Paginated, Response, User } from "~/types";
+import type { Board, Paginated, ServerBoardUpdate, Response, User, ClientBoardUpdate } from "~/types"; // prettier-ignore
 import { config } from "~/config";
 
 class ApiService {
   private readonly client: AxiosInstance;
+  private sockets = new Map<string, Socket>();
 
   constructor(baseURL: string) {
     this.client = axios.create({
@@ -39,6 +41,55 @@ class ApiService {
 
   public getBoard(id: string): Promise<Response<Board>> {
     return this.get(`/boards/${id}`);
+  }
+
+  public listenForBoardUpdates(
+    id: string,
+    onUpdate: (update: ServerBoardUpdate) => void,
+    onError: (error: Error) => void,
+    onClose: (reason: string) => void,
+  ): () => void {
+    if (this.sockets.has(id)) {
+      this.sockets.get(id)?.disconnect();
+      this.sockets.delete(id);
+    }
+
+    const socket = io(`${config.WS_BASE_URL}/boards/${id}`);
+    this.sockets.set(id, socket);
+
+    socket.on("connect", () => {
+      console.log(`Socket connected for board ${id} (socket ID: ${socket.id})`);
+    });
+
+    socket.on("update", (update: ServerBoardUpdate) => {
+      onUpdate(update);
+    });
+
+    socket.on("connect_error", (err) => {
+      onError(err);
+    });
+
+    socket.on("disconnect", (reason) => {
+      this.sockets.delete(id);
+      onClose(reason);
+    });
+
+    return () => {
+      if (socket.connected) {
+        socket.disconnect();
+        this.sockets.delete(id);
+      }
+    };
+  }
+
+  public emitBoardUpdate(id: string, update: ClientBoardUpdate): void {
+    const socket = this.sockets.get(id);
+    if (socket && socket.connected) {
+      console.log(`Emitting update:`, update);
+      socket.emit("update", update);
+    } else {
+      console.warn(`Socket for board ${id} is not connected. Cannot emit update.`);
+    }
   }
 
   // -------------------------------------------------------------------------------------------------------------------
