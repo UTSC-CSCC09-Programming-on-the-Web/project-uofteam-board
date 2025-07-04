@@ -1,10 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { MdArrowBack, MdHelpOutline, MdOutlineCircle, MdOutlineRectangle } from "react-icons/md";
+import { RiPenNibLine } from "react-icons/ri";
+import { TbLine } from "react-icons/tb";
+import clsx from "clsx";
 
 import type { Route } from "./+types/EditBoard";
-import { Spinner } from "~/components";
+import { Button, Spinner } from "~/components";
 import type { Board } from "~/types";
 import { API } from "~/services";
+
+import { useSpacePressed } from "./useSpacePressed";
+import { ColorPicker } from "./ColorPicker";
+import { ToolButton } from "./ToolButton";
 
 export function meta() {
   return [{ title: "Edit Board" }];
@@ -14,18 +22,72 @@ interface Path {
   d: string;
   strokeColor: string;
   strokeWidth: number;
+  fillColor: string;
 }
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+interface ViewBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+type BoardState =
+  | {
+      type: "DRAWING_FREEHAND";
+      path: Path;
+    }
+  | {
+      type: "DRAWING_LINE";
+      startPoint: Point;
+      path: Path;
+    }
+  | {
+      type: "DRAWING_RECTANGLE";
+      startPoint: Point;
+      path: Path;
+    }
+  | {
+      type: "DRAWING_CIRCLE";
+      startPoint: Point;
+      path: Path;
+    }
+  | {
+      type: "PANNING";
+      startPoint: Point;
+      startViewBox: ViewBox;
+    }
+  | {
+      type: "IDLE";
+    };
+
+type ToolType = `${"PEN" | "LINE" | "RECTANGLE" | "CIRCLE"}_TOOL`;
 
 export default function EditBoard({ params }: Route.ComponentProps) {
   const navigate = useNavigate();
-
-  const [strokeWidth] = useState(4);
-  const [strokeColor] = useState("#000000");
-  const [paths, setPaths] = useState<Path[]>([]);
-  const [isDrawing, setIsDrawing] = useState(false);
+  const spacePressed = useSpacePressed();
   const [board, setBoard] = useState<Board | null>(null);
+  const renderCount = useRef(0);
+
+  const [paths, setPaths] = useState<Path[]>([]);
+  const [fillColor, setFillColor] = useState("#fff085");
+  const [strokeWidth, setStrokeWidth] = useState(4);
+  const [strokeColor, setStrokeColor] = useState("#193cb8");
+  const [viewBox, setViewBox] = useState<ViewBox>({ x: 0, y: 0, width: 480, height: 480 });
+  const [selectedTool, setSelectedTool] = useState<ToolType>("PEN_TOOL");
+
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const currentPathRef = useRef<Path | null>(null);
+  const currPathElemRef = useRef<SVGPathElement | null>(null);
+  const boardStateRef = useRef<BoardState>({ type: "IDLE" });
+
+  useEffect(() => {
+    renderCount.current += 1;
+  });
 
   useEffect(() => {
     (async () => {
@@ -40,91 +102,275 @@ export default function EditBoard({ params }: Route.ComponentProps) {
     })();
   }, [params.bid]);
 
-  const getCoords = (
-    e: React.MouseEvent<SVGSVGElement> | React.TouchEvent<SVGSVGElement>,
-  ): { x: number; y: number } => {
+  const getEffectiveScale = (): number => {
+    if (!svgRef.current) return 1;
+    const svgRect = svgRef.current.getBoundingClientRect();
+    const svgAspectRatio = svgRect.width / svgRect.height;
+    const viewBoxAspectRatio = viewBox.width / viewBox.height;
+    return svgAspectRatio > viewBoxAspectRatio
+      ? viewBox.height / svgRect.height
+      : viewBox.width / svgRect.width;
+  };
+
+  const getSvgPoint = (clientX: number, clientY: number): Point => {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
-    const rect = svg.getBoundingClientRect();
 
-    let x: number, y: number;
-    if ("touches" in e.nativeEvent && e.nativeEvent.touches.length > 0) {
-      x = e.nativeEvent.touches[0].clientX - rect.left;
-      y = e.nativeEvent.touches[0].clientY - rect.top;
-    } else {
-      const mouseEvent = e as React.MouseEvent<SVGSVGElement>;
-      x = mouseEvent.clientX - rect.left;
-      y = mouseEvent.clientY - rect.top;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    return pt.matrixTransform(ctm.inverse());
+  };
+
+  const getSvgMidPoint = (): Point => {
+    if (!svgRef.current) return { x: 0, y: 0 };
+    const svgRect = svgRef.current.getBoundingClientRect();
+    const clientPoint: Point = { x: svgRect.left + svgRect.right / 2, y: svgRect.top + svgRect.height / 2 }; // prettier-ignore
+    return getSvgPoint(clientPoint.x, clientPoint.y);
+  };
+
+  const handleDrawingStart = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (!svgRef.current) return;
+
+    if (spacePressed) {
+      boardStateRef.current = {
+        type: "PANNING",
+        startPoint: { x: e.clientX, y: e.clientY },
+        startViewBox: { ...viewBox },
+      };
+      return;
     }
-    return { x, y };
+
+    const { x, y } = getSvgPoint(e.clientX, e.clientY);
+    const commonPathProps = { strokeColor, strokeWidth, fillColor } satisfies Partial<Path>;
+    switch (selectedTool) {
+      case "PEN_TOOL":
+        {
+          const newPath: Path = { ...commonPathProps, d: `M ${x} ${y} L ${x} ${y}`, fillColor: "none" }; // prettier-ignore
+          boardStateRef.current = { type: "DRAWING_FREEHAND", path: newPath };
+          setPaths((prevPaths) => [...prevPaths, newPath]);
+        }
+        break;
+      case "LINE_TOOL":
+        {
+          const newPath: Path = { ...commonPathProps, d: `M ${x} ${y} L ${x} ${y}`, fillColor: "none" }; // prettier-ignore
+          boardStateRef.current = { type: "DRAWING_LINE", path: newPath, startPoint: { x, y } };
+          setPaths((prevPaths) => [...prevPaths, newPath]);
+        }
+        break;
+      case "RECTANGLE_TOOL":
+        {
+          const newPath: Path = { ...commonPathProps, d: `M ${x} ${y} L ${x} ${y}` };
+          boardStateRef.current = { type: "DRAWING_RECTANGLE", path: newPath, startPoint: { x, y } }; // prettier-ignore
+          setPaths((prevPaths) => [...prevPaths, newPath]);
+        }
+        break;
+      case "CIRCLE_TOOL":
+        {
+          const newPath: Path = { ...commonPathProps, d: `M ${x} ${y} A 0 0 0 0 1 ${x} ${y}` };
+          boardStateRef.current = { type: "DRAWING_CIRCLE", path: newPath, startPoint: { x, y } };
+          setPaths((prevPaths) => [...prevPaths, newPath]);
+        }
+        break;
+      default:
+        [selectedTool] satisfies [never];
+        break;
+    }
   };
 
-  const handleDrawingStart = (
-    e: React.MouseEvent<SVGSVGElement> | React.TouchEvent<SVGSVGElement>,
-  ) => {
-    e.preventDefault();
-    setIsDrawing(true);
-    const { x, y } = getCoords(e);
-    const newPath: Path = { d: `M ${x} ${y}`, strokeColor, strokeWidth };
-    currentPathRef.current = newPath;
-    setPaths((prevPaths) => [...prevPaths, newPath]);
-  };
+  const handleDrawingMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    const bs = boardStateRef.current;
+    if (!svgRef.current || bs.type === "IDLE") return;
 
-  const handleDrawingMove = (
-    e: React.MouseEvent<SVGSVGElement> | React.TouchEvent<SVGSVGElement>,
-  ) => {
-    if (!isDrawing || !currentPathRef.current) return;
-    e.preventDefault();
-    const { x, y } = getCoords(e);
-    const newD = `${currentPathRef.current.d} L ${x} ${y}`;
-    currentPathRef.current.d = newD;
-    setPaths((prevPaths) => {
-      const newPaths = [...prevPaths];
-      newPaths[newPaths.length - 1] = { ...newPaths[newPaths.length - 1], d: newD };
-      return newPaths;
-    });
+    if (bs.type === "PANNING") {
+      const dx = e.clientX - bs.startPoint.x;
+      const dy = e.clientY - bs.startPoint.y;
+      const scale = getEffectiveScale();
+      const newX = bs.startViewBox.x - dx * scale;
+      const newY = bs.startViewBox.y - dy * scale;
+      setViewBox((prev) => ({ ...prev, x: newX, y: newY }));
+      return;
+    }
+
+    if (!currPathElemRef.current) return;
+    const { x, y } = getSvgPoint(e.clientX, e.clientY);
+    switch (bs.type) {
+      case "DRAWING_FREEHAND":
+        {
+          const newD = `${bs.path.d} L ${x} ${y}`;
+          currPathElemRef.current.setAttribute("d", newD);
+          bs.path.d = newD;
+        }
+        break;
+      case "DRAWING_LINE":
+        {
+          const newD = `M ${bs.startPoint.x} ${bs.startPoint.y} L ${x} ${y}`;
+          currPathElemRef.current.setAttribute("d", newD);
+          bs.path.d = newD;
+        }
+        break;
+      case "DRAWING_RECTANGLE":
+        {
+          const newD = `M ${bs.startPoint.x} ${bs.startPoint.y} L ${x} ${bs.startPoint.y} L ${x} ${y} L ${bs.startPoint.x} ${y} Z`;
+          currPathElemRef.current.setAttribute("d", newD);
+          bs.path.d = newD;
+        }
+        break;
+      case "DRAWING_CIRCLE":
+        {
+          const radius = Math.sqrt((x - bs.startPoint.x) ** 2 + (y - bs.startPoint.y) ** 2);
+          const newD = `M ${bs.startPoint.x} ${bs.startPoint.y} m -${radius}, 0 a ${radius},${radius} 0 1,0 ${radius * 2},0 a ${radius},${radius} 0 1,0 -${radius * 2},0`;
+          currPathElemRef.current.setAttribute("d", newD);
+          bs.path.d = newD;
+        }
+        break;
+      default:
+        [bs] satisfies [never];
+        break;
+    }
   };
 
   const handleDrawingEnd = () => {
-    if (!isDrawing) return;
-    setIsDrawing(false);
-    currentPathRef.current = null;
+    const bs = boardStateRef.current;
+    console.log("Drawing end called", svgRef.current, bs.type);
+    if (!svgRef.current || bs.type === "IDLE") return;
+
+    if (
+      bs.type === "DRAWING_FREEHAND" ||
+      bs.type === "DRAWING_LINE" ||
+      bs.type === "DRAWING_RECTANGLE" ||
+      bs.type === "DRAWING_CIRCLE"
+    ) {
+      const newPath = bs.path;
+      setPaths((prevPaths) => {
+        const updatedPaths = [...prevPaths];
+        updatedPaths[updatedPaths.length - 1] = newPath;
+        return updatedPaths;
+      });
+    }
+
+    boardStateRef.current = { type: "IDLE" };
+  };
+
+  const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
+    if (!svgRef.current) return;
+    let zoomFactor = 1.15;
+    if (e.deltaY < 0) zoomFactor = 1 / zoomFactor;
+    const point = getSvgPoint(e.clientX, e.clientY);
+    doZoom(point, zoomFactor);
+  };
+
+  const handleZoomIn = () => doZoom(getSvgMidPoint(), 1 / 1.15);
+  const handleZoomOut = () => doZoom(getSvgMidPoint(), 1.15);
+
+  const doZoom = (point: Point, zoomFactor: number) => {
+    setViewBox((prev) => {
+      const newWidth = prev.width * zoomFactor;
+      const newHeight = prev.height * zoomFactor;
+      const newX = point.x - (point.x - prev.x) * (newWidth / prev.width);
+      const newY = point.y - (point.y - prev.y) * (newHeight / prev.height);
+      return { x: newX, y: newY, width: newWidth, height: newHeight };
+    });
   };
 
   if (!board) {
     return (
-      <div className="flex-1 flex justify-center items-center text-yellow-700/60">
+      <div className="fixed inset-0 flex justify-center items-center text-yellow-700/60 bg-yellow-50">
         <Spinner className="size-24 border-8" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1">
+    <>
+      <div className="fixed top-0 left-0 right-0 z-10 p-4">
+        <div
+          className={clsx(
+            "flex items-center justify-between p-2",
+            "bg-yellow-50 shadow-[3px_3px] shadow-blue-800/15",
+            "border-2 border-gray-800/60 rounded-tl-[255px_15px] rounded-tr-[15px_225px] rounded-br-[225px_15px] rounded-bl-[15px_255px]",
+          )}
+        >
+          <div className="flex items-center gap-8">
+            <Button
+              icon={<MdArrowBack />}
+              onClick={() => navigate("/dashboard")}
+              variant="neutral"
+              size="sm"
+            >
+              Dashboard
+            </Button>
+            <h1 className="text-2xl font-bold text-blue-800">Board Name {renderCount.current}</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <ToolButton
+              label="Pen Tool"
+              selected={selectedTool === "PEN_TOOL"}
+              onClick={() => setSelectedTool("PEN_TOOL")}
+              icon={<RiPenNibLine />}
+            />
+            <ToolButton
+              label="Line Tool"
+              selected={selectedTool === "LINE_TOOL"}
+              onClick={() => setSelectedTool("LINE_TOOL")}
+              icon={<TbLine />}
+            />
+            <ToolButton
+              label="Rectangle Tool"
+              selected={selectedTool === "RECTANGLE_TOOL"}
+              onClick={() => setSelectedTool("RECTANGLE_TOOL")}
+              icon={<MdOutlineRectangle />}
+            />
+            <ToolButton
+              label="Circle Tool"
+              selected={selectedTool === "CIRCLE_TOOL"}
+              onClick={() => setSelectedTool("CIRCLE_TOOL")}
+              icon={<MdOutlineCircle />}
+            />
+            <ColorPicker value={strokeColor} onChange={setStrokeColor} />
+            <ColorPicker value={fillColor} onChange={setFillColor} />
+          </div>
+        </div>
+      </div>
+      <div className="fixed bottom-0 left-0 right-0 z-10 p-4 flex justify-between">
+        <div className="flex gap-2">
+          <Button size="sm" onClick={handleZoomIn}>
+            +
+          </Button>
+          <Button size="sm" onClick={handleZoomOut}>
+            -
+          </Button>
+        </div>
+        <Button icon={<MdHelpOutline size="1.3em" />} size="sm">
+          Help
+        </Button>
+      </div>
       <svg
         ref={svgRef}
-        onMouseDown={handleDrawingStart}
-        onMouseMove={handleDrawingMove}
-        onMouseUp={handleDrawingEnd}
-        onMouseLeave={handleDrawingEnd}
-        onTouchStart={handleDrawingStart}
-        onTouchMove={handleDrawingMove}
-        onTouchEnd={handleDrawingEnd}
-        onTouchCancel={handleDrawingEnd}
-        className="cursor-crosshair touch-none w-full bg-blue-50"
+        onWheel={handleWheel}
+        onPointerDown={handleDrawingStart}
+        onPointerMove={handleDrawingMove}
+        onPointerUp={handleDrawingEnd}
+        onPointerLeave={handleDrawingEnd}
+        viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
+        className={"touch-none h-screen w-screen cursor-crosshair"}
       >
         {paths.map((path, index) => (
           <path
             key={index}
             d={path.d}
+            fill={path.fillColor}
             stroke={path.strokeColor}
             strokeWidth={path.strokeWidth}
             strokeLinecap="round"
             strokeLinejoin="round"
-            fill="none"
+            ref={index === paths.length - 1 ? currPathElemRef : null}
           />
         ))}
       </svg>
-    </div>
+    </>
   );
 }

@@ -1,0 +1,9 @@
+.input::-webkit-color-swatch-wrapper {
+  padding: 3px;
+}
+
+.input::-webkit-color-swatch {
+  border-color: #00000044;
+  border-radius: 8px;
+  border-width: 2px;
+}
