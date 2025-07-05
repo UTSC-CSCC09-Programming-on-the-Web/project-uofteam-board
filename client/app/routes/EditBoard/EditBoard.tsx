@@ -14,6 +14,7 @@ import { API } from "~/services";
 import { useSpacePressed } from "./useSpacePressed";
 import { ColorPicker } from "./ColorPicker";
 import { ToolButton } from "./ToolButton";
+import { HelpDialog } from "./HelpDialog";
 
 export function meta() {
   return [{ title: "Edit Board" }];
@@ -83,6 +84,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   const [strokeColor, setStrokeColor] = useState("#193cb8");
   const [selectedTool, setSelectedTool] = useState<ToolType>("PEN_TOOL");
   const [viewBox, setViewBox] = useState<ViewBox>({ x: 0, y: 0, width: 480, height: 480 });
+  const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const [paths, setPaths] = useState<PathWithLocal[]>([]);
 
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -402,7 +404,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
         </div>
         <Button
           size="sm"
-          onClick={() => alert("TODO")}
+          onClick={() => setHelpDialogOpen(true)}
           icon={<MdHelpOutline size="1.3em" />}
           className="pointer-events-auto"
         >
@@ -432,6 +434,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
           />
         ))}
       </svg>
+      <HelpDialog open={helpDialogOpen} onClose={() => setHelpDialogOpen(false)} />
     </>
   );
 }
