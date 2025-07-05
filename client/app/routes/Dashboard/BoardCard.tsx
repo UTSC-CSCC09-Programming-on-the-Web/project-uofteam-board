@@ -16,7 +16,7 @@ function BoardCard({ title, imageURL, chips, onClick }: BoardCardProps) {
   return (
     <div
       onClick={onClick}
-      className="bg-white border-gray-500 border-2 rounded-tl-[50px_5px] rounded-tr-[5px_50px] rounded-br-[15px_5px] rounded-bl-[5px_15px] cursor-pointer shadow-[4px_4px] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] shadow-yellow-950/20 transition-all"
+      className="bg-white border-gray-500 border-2 rounded-tl-[50px_5px] rounded-tr-[5px_50px] rounded-br-[50px_5px] rounded-bl-[50px_5px] overflow-hidden cursor-pointer shadow-[4px_4px] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] shadow-yellow-950/20 transition-all"
     >
       <div className="flex items-center px-3 py-2 sm:py-3 md:px-4 md:py-4 border-b-2 border-gray-500">
         <h2 className="text-md sm:text-lg md:text-xl font-semibold line-clamp-1">{title}</h2>
