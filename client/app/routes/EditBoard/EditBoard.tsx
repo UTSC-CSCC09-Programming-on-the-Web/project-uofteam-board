@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { MdArrowBack, MdHelpOutline, MdOutlineCircle, MdOutlineRectangle } from "react-icons/md";
-import { RiPenNibLine } from "react-icons/ri";
-import { TbLine } from "react-icons/tb";
+import { MdArrowBack, MdDelete, MdHelpOutline, MdOutlineRectangle } from "react-icons/md";
+import { Stage, Layer, Rect, Path as KonvaPath, Transformer } from "react-konva";
+import { RiPenNibLine, RiOpenaiFill } from "react-icons/ri";
+import colors from "tailwindcss/colors";
 import { v4 as uuid } from "uuid";
+import Konva from "konva";
 import clsx from "clsx";
 
 import type { Route } from "./+types/EditBoard";
@@ -33,45 +35,19 @@ interface Point {
   y: number;
 }
 
-interface ViewBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
 type BoardState =
   | {
+      type: "SELECTING";
+    }
+  | {
       type: "DRAWING_FREEHAND";
-      path: Path;
-    }
-  | {
-      type: "DRAWING_LINE";
-      startPoint: Point;
-      path: Path;
-    }
-  | {
-      type: "DRAWING_RECTANGLE";
-      startPoint: Point;
-      path: Path;
-    }
-  | {
-      type: "DRAWING_CIRCLE";
-      startPoint: Point;
-      path: Path;
-    }
-  | {
-      type: "PANNING";
-      startPoint: Point;
-      startViewBox: ViewBox;
-      path: null;
+      pathID: string;
     }
   | {
       type: "IDLE";
-      path: null;
     };
 
-type ToolType = `${"PEN" | "LINE" | "RECTANGLE" | "CIRCLE"}_TOOL`;
+type Tool = "SELECTION" | "PEN";
 
 export default function EditBoard({ params }: Route.ComponentProps) {
   const navigate = useNavigate();
@@ -82,14 +58,20 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   const [fillColor, setFillColor] = useState("#fff085");
   const [strokeWidth, setStrokeWidth] = useState(4);
   const [strokeColor, setStrokeColor] = useState("#193cb8");
-  const [selectedTool, setSelectedTool] = useState<ToolType>("PEN_TOOL");
-  const [viewBox, setViewBox] = useState<ViewBox>({ x: 0, y: 0, width: 480, height: 480 });
-  const [helpDialogOpen, setHelpDialogOpen] = useState(false);
+
+  const [tool, setTool] = useState<Tool>("PEN");
+  const [selectedIDs, setSelectedIDs] = useState<string[]>([]);
+  const [selectionRect, setSelectionRect] = useState<null | { start: Point; end: Point }>(null);
+  const pathRefs = useRef<Map<string, Konva.Path>>(new Map());
+  const transformerRef = useRef<Konva.Transformer>(null);
+
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const stageRef = useRef<Konva.Stage>(null);
   const [paths, setPaths] = useState<PathWithLocal[]>([]);
 
-  const svgRef = useRef<SVGSVGElement | null>(null);
-  const currPathElemRef = useRef<SVGPathElement | null>(null);
-  const boardStateRef = useRef<BoardState>({ type: "IDLE", path: null });
+  const [helpDialogOpen, setHelpDialogOpen] = useState(false);
+  const boardStateRef = useRef<BoardState>({ type: "IDLE" });
 
   useEffect(() => {
     renderCount.current += 1;
@@ -107,6 +89,17 @@ export default function EditBoard({ params }: Route.ComponentProps) {
       setBoard(res.data);
     })();
   }, [params.bid]);
+
+  useEffect(() => {
+    if (selectedIDs.length && transformerRef.current) {
+      const nodes = selectedIDs
+        .map((id) => pathRefs.current.get(id))
+        .filter((node) => node !== undefined);
+      transformerRef.current.nodes(nodes);
+    } else if (transformerRef.current) {
+      transformerRef.current.nodes([]);
+    }
+  }, [selectedIDs]);
 
   useEffect(
     () =>
@@ -157,181 +150,210 @@ export default function EditBoard({ params }: Route.ComponentProps) {
     [params.bid],
   );
 
-  const getEffectiveScale = (): number => {
-    if (!svgRef.current) return 1;
-    const svgRect = svgRef.current.getBoundingClientRect();
-    const svgAspectRatio = svgRect.width / svgRect.height;
-    const viewBoxAspectRatio = viewBox.width / viewBox.height;
-    return svgAspectRatio > viewBoxAspectRatio
-      ? viewBox.height / svgRect.height
-      : viewBox.width / svgRect.width;
-  };
+  const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (spacePressed) return;
+    const stage = e.target.getStage();
+    if (!stage) return;
 
-  const getSvgPoint = (clientX: number, clientY: number): Point => {
-    const svg = svgRef.current;
-    if (!svg) return { x: 0, y: 0 };
-
-    const ctm = svg.getScreenCTM();
-    if (!ctm) return { x: 0, y: 0 };
-
-    const pt = svg.createSVGPoint();
-    pt.x = clientX;
-    pt.y = clientY;
-    return pt.matrixTransform(ctm.inverse());
-  };
-
-  const getSvgMidPoint = (): Point => {
-    if (!svgRef.current) return { x: 0, y: 0 };
-    const svgRect = svgRef.current.getBoundingClientRect();
-    const clientPoint: Point = { x: svgRect.left + svgRect.right / 2, y: svgRect.top + svgRect.height / 2 }; // prettier-ignore
-    return getSvgPoint(clientPoint.x, clientPoint.y);
-  };
-
-  const handleDrawingStart = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (!svgRef.current) return;
-
-    if (spacePressed) {
-      boardStateRef.current = {
-        type: "PANNING",
-        startPoint: { x: e.clientX, y: e.clientY },
-        startViewBox: { ...viewBox },
-        path: null,
-      };
-      return;
-    }
-
-    const { x, y } = getSvgPoint(e.clientX, e.clientY);
+    const ptr = stage.getRelativePointerPosition();
+    if (!ptr) return;
+    const { x, y } = ptr;
 
     const commonPathProps = {
       id: uuid(),
       strokeColor,
       strokeWidth,
       fillColor,
+      x: 0,
+      y: 0,
+      scaleX: 1,
+      scaleY: 1,
+      rotation: 0,
       fromLocal: true,
     } satisfies Partial<PathWithLocal>;
 
     let newPath: PathWithLocal;
-    switch (selectedTool) {
-      case "PEN_TOOL":
-        newPath = { ...commonPathProps, d: `M ${x} ${y} L ${x} ${y}`, fillColor: "none" };
-        boardStateRef.current = { type: "DRAWING_FREEHAND", path: newPath };
+    switch (tool) {
+      case "SELECTION":
+        if (e.target !== stage) return;
+        boardStateRef.current = { type: "SELECTING" };
+        setSelectionRect({ start: ptr, end: ptr });
+        break;
+
+      case "PEN":
+        newPath = { ...commonPathProps, d: `M ${x} ${y} L ${x} ${y}`, fillColor: "transparent" };
+        boardStateRef.current = { type: "DRAWING_FREEHAND", pathID: newPath.id };
         setPaths((prevPaths) => [...prevPaths, newPath]);
         break;
-      case "LINE_TOOL":
-        newPath = { ...commonPathProps, d: `M ${x} ${y} L ${x} ${y}`, fillColor: "none" };
-        boardStateRef.current = { type: "DRAWING_LINE", path: newPath, startPoint: { x, y } };
-        setPaths((prevPaths) => [...prevPaths, newPath]);
-        break;
-      case "RECTANGLE_TOOL":
-        newPath = { ...commonPathProps, d: `M ${x} ${y} L ${x} ${y}` };
-        boardStateRef.current = { type: "DRAWING_RECTANGLE", path: newPath, startPoint: { x, y } };
-        setPaths((prevPaths) => [...prevPaths, newPath]);
-        break;
-      case "CIRCLE_TOOL":
-        newPath = { ...commonPathProps, d: `M ${x} ${y} A 0 0 0 0 1 ${x} ${y}` };
-        boardStateRef.current = { type: "DRAWING_CIRCLE", path: newPath, startPoint: { x, y } };
-        setPaths((prevPaths) => [...prevPaths, newPath]);
-        break;
+
       default:
-        [selectedTool] satisfies [never];
+        [tool] satisfies [never];
         break;
     }
   };
 
-  const handleDrawingMove = (e: React.PointerEvent<SVGSVGElement>) => {
+  const handleMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
     const bs = boardStateRef.current;
-    if (!svgRef.current || bs.type === "IDLE") return;
+    if (bs.type === "IDLE") return;
 
-    if (bs.type === "PANNING") {
-      const dx = e.clientX - bs.startPoint.x;
-      const dy = e.clientY - bs.startPoint.y;
-      const scale = getEffectiveScale();
-      const newX = bs.startViewBox.x - dx * scale;
-      const newY = bs.startViewBox.y - dy * scale;
-      setViewBox((prev) => ({ ...prev, x: newX, y: newY }));
-      return;
-    }
+    const stage = e.target.getStage();
+    if (!stage) return;
 
-    if (!currPathElemRef.current) return;
-    const { x, y } = getSvgPoint(e.clientX, e.clientY);
+    const ptr = stage.getRelativePointerPosition();
+    if (!ptr) return;
+    const { x, y } = ptr;
+
     switch (bs.type) {
+      case "SELECTING":
+        if (!selectionRect) return;
+        setSelectionRect({ ...selectionRect, end: ptr });
+        break;
+
       case "DRAWING_FREEHAND":
-        {
-          const newD = `${bs.path.d} L ${x} ${y}`;
-          currPathElemRef.current.setAttribute("d", newD);
-          bs.path.d = newD;
-        }
+        setPaths((prevPaths) => {
+          const paths = [...prevPaths];
+          const pathIndex = paths.findIndex((p) => p.id === bs.pathID);
+          if (pathIndex === -1) return prevPaths;
+          const path = paths[pathIndex];
+          const newD = `${path.d} L ${x} ${y}`;
+          paths[pathIndex] = { ...path, d: newD };
+          return paths;
+        });
         break;
-      case "DRAWING_LINE":
-        {
-          const newD = `M ${bs.startPoint.x} ${bs.startPoint.y} L ${x} ${y}`;
-          currPathElemRef.current.setAttribute("d", newD);
-          bs.path.d = newD;
-        }
-        break;
-      case "DRAWING_RECTANGLE":
-        {
-          const newD = `M ${bs.startPoint.x} ${bs.startPoint.y} L ${x} ${bs.startPoint.y} L ${x} ${y} L ${bs.startPoint.x} ${y} Z`;
-          currPathElemRef.current.setAttribute("d", newD);
-          bs.path.d = newD;
-        }
-        break;
-      case "DRAWING_CIRCLE":
-        {
-          const radius = Math.sqrt((x - bs.startPoint.x) ** 2 + (y - bs.startPoint.y) ** 2);
-          const newD = `M ${bs.startPoint.x} ${bs.startPoint.y} m -${radius}, 0 a ${radius},${radius} 0 1,0 ${radius * 2},0 a ${radius},${radius} 0 1,0 -${radius * 2},0`;
-          currPathElemRef.current.setAttribute("d", newD);
-          bs.path.d = newD;
-        }
-        break;
+
       default:
         [bs] satisfies [never];
         break;
     }
   };
 
-  const handleDrawingEnd = () => {
+  const handleMouseUp = (e: Konva.KonvaEventObject<MouseEvent>) => {
     const bs = boardStateRef.current;
-    if (!svgRef.current || bs.type === "IDLE") return;
+    if (bs.type === "IDLE") return;
 
-    if (
-      bs.type === "DRAWING_FREEHAND" ||
-      bs.type === "DRAWING_LINE" ||
-      bs.type === "DRAWING_RECTANGLE" ||
-      bs.type === "DRAWING_CIRCLE"
-    ) {
-      const newPath = bs.path;
-      API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [newPath] });
-      setPaths((prevPaths) => {
-        const updatedPaths = [...prevPaths];
-        const existingIndex = updatedPaths.findIndex((p) => p.id === newPath.id);
-        if (existingIndex !== -1) updatedPaths[existingIndex] = newPath;
-        return updatedPaths;
-      });
+    const stage = e.target.getStage();
+    if (!stage) return;
+
+    switch (bs.type) {
+      case "SELECTING":
+        if (!selectionRect) return;
+        setSelectionRect(null);
+
+        const selBox = {
+          x: Math.min(selectionRect.start.x, selectionRect.end.x),
+          y: Math.min(selectionRect.start.y, selectionRect.end.y),
+          width: Math.abs(selectionRect.start.x - selectionRect.end.x),
+          height: Math.abs(selectionRect.start.y - selectionRect.end.y),
+        };
+
+        const selected = paths.filter((x) => {
+          const path = new Konva.Path({
+            data: x.d,
+            x: x.x,
+            y: x.y,
+            scaleX: x.scaleX,
+            scaleY: x.scaleY,
+            rotation: x.rotation,
+          });
+
+          return Konva.Util.haveIntersection(selBox, path.getClientRect());
+        });
+
+        setSelectedIDs(selected.map((x) => x.id));
+        break;
+
+      case "DRAWING_FREEHAND":
+        const path = paths.find((p) => p.id === bs.pathID);
+        if (path) API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [path] }); // prettier-ignore
+        break;
+
+      default:
+        [bs] satisfies [never];
+        break;
     }
 
-    boardStateRef.current = { type: "IDLE", path: null };
+    boardStateRef.current = { type: "IDLE" };
   };
 
-  const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
-    if (!svgRef.current) return;
-    let zoomFactor = 1.15;
-    if (e.deltaY < 0) zoomFactor = 1 / zoomFactor;
-    const point = getSvgPoint(e.clientX, e.clientY);
-    doZoom(point, zoomFactor);
+  const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+
+    const scaleBy = 1.15;
+    const newScale = e.evt.deltaY < 0 ? scaleBy : 1 / scaleBy;
+    doZoom(newScale, pointer);
   };
 
-  const handleZoomIn = () => doZoom(getSvgMidPoint(), 1 / 1.15);
-  const handleZoomOut = () => doZoom(getSvgMidPoint(), 1.15);
+  const handleZoomIn = () => {
+    if (!stageRef.current) return;
+    const stage = stageRef.current;
+    doZoom(1.15, { x: stage.width() / 2, y: stage.height() / 2 });
+  };
 
-  const doZoom = (point: Point, zoomFactor: number) => {
-    setViewBox((prev) => {
-      const newWidth = prev.width * zoomFactor;
-      const newHeight = prev.height * zoomFactor;
-      const newX = point.x - (point.x - prev.x) * (newWidth / prev.width);
-      const newY = point.y - (point.y - prev.y) * (newHeight / prev.height);
-      return { x: newX, y: newY, width: newWidth, height: newHeight };
+  const handleZoomOut = () => {
+    if (!stageRef.current) return;
+    const stage = stageRef.current;
+    doZoom(1 / 1.15, { x: stage.width() / 2, y: stage.height() / 2 });
+  };
+
+  const doZoom = (scale: number, point: Point) => {
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const oldScale = stage.scaleX();
+    const newScale = oldScale * scale;
+
+    const mousePointTo = {
+      x: (point.x - stage.x()) / oldScale,
+      y: (point.y - stage.y()) / oldScale,
+    };
+
+    stage.scale({ x: newScale, y: newScale });
+    stage.position({
+      x: point.x - mousePointTo.x * newScale,
+      y: point.y - mousePointTo.y * newScale,
     });
+  };
+
+  const handlePathClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (tool === "SELECTION") {
+      const node = e.target;
+      const currID = node.id();
+      setSelectedIDs((prev) =>
+        prev.includes(currID) ? prev.filter((id) => id !== currID) : [...prev, currID],
+      );
+    }
+  };
+
+  const handlePathDragEnd = (e: Konva.KonvaEventObject<Event>) => {
+    const node = e.target;
+    const id = node.id();
+    setPaths((prev) =>
+      prev.map((p) => {
+        if (p.id === id) {
+          p = { ...p, x: node.x(), y: node.y() };
+          API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [p] });
+        }
+        return p;
+      }),
+    );
+  };
+
+  const handlePathTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
+    const node = e.target;
+    const id = node.id();
+    setPaths((prev) =>
+      prev.map((p) => {
+        if (p.id === id) {
+          p = { ...p, x: node.x(), y: node.y(), scaleX: node.scaleX(), scaleY: node.scaleY(), rotation: node.rotation() }; // prettier-ignore
+          API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [p] });
+        }
+        return p;
+      }),
+    );
   };
 
   if (!board) {
@@ -364,32 +386,59 @@ export default function EditBoard({ params }: Route.ComponentProps) {
             <h1 className="text-2xl font-bold text-blue-800">Board Name {renderCount.current}</h1>
           </div>
           <div className="flex items-center gap-2 pointer-events-auto">
-            <ToolButton
-              label="Pen Tool"
-              selected={selectedTool === "PEN_TOOL"}
-              onClick={() => setSelectedTool("PEN_TOOL")}
-              icon={<RiPenNibLine />}
-            />
-            <ToolButton
+            {selectedIDs.length > 0 ? (
+              <>
+                <ToolButton
+                  selected
+                  color="danger"
+                  label="Delete"
+                  icon={<MdDelete />}
+                  onClick={() => {
+                    setPaths((prev) => prev.filter((path) => !selectedIDs.includes(path.id)));
+                    API.emitBoardUpdate(params.bid, { type: "DELETE_PATHS", ids: selectedIDs });
+                    setSelectedIDs([]);
+                  }}
+                />
+                <ToolButton
+                  selected={false}
+                  label="Generative Fill"
+                  icon={<RiOpenaiFill />}
+                  onClick={() => {
+                    API.emitBoardUpdate(params.bid, { type: "GENERATIVE_FILL", ids: selectedIDs });
+                    setSelectedIDs([]);
+                  }}
+                />
+              </>
+            ) : (
+              <>
+                <ToolButton
+                  label="Pen Tool"
+                  selected={tool === "PEN"}
+                  onClick={() => setTool("PEN")}
+                  icon={<RiPenNibLine />}
+                />
+                {/* <ToolButton
               label="Line Tool"
-              selected={selectedTool === "LINE_TOOL"}
-              onClick={() => setSelectedTool("LINE_TOOL")}
+              selected={tool === "PEN"}
+              onClick={() => setTool("PEN")}
               icon={<TbLine />}
-            />
-            <ToolButton
-              label="Rectangle Tool"
-              selected={selectedTool === "RECTANGLE_TOOL"}
-              onClick={() => setSelectedTool("RECTANGLE_TOOL")}
-              icon={<MdOutlineRectangle />}
-            />
-            <ToolButton
+            /> */}
+                <ToolButton
+                  label="Rectangle Tool"
+                  selected={tool === "SELECTION"}
+                  onClick={() => setTool("SELECTION")}
+                  icon={<MdOutlineRectangle />}
+                />
+                {/* <ToolButton
               label="Circle Tool"
-              selected={selectedTool === "CIRCLE_TOOL"}
-              onClick={() => setSelectedTool("CIRCLE_TOOL")}
+              selected={tool === "PEN"}
+              onClick={() => setTool("PEN")}
               icon={<MdOutlineCircle />}
-            />
-            <ColorPicker value={strokeColor} onChange={setStrokeColor} />
-            <ColorPicker value={fillColor} onChange={setFillColor} />
+            /> */}
+                <ColorPicker value={strokeColor} onChange={setStrokeColor} />
+                <ColorPicker value={fillColor} onChange={setFillColor} />
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -411,29 +460,57 @@ export default function EditBoard({ params }: Route.ComponentProps) {
           Help
         </Button>
       </div>
-      <svg
-        ref={svgRef}
+      <Stage
+        width={width}
+        height={height}
+        ref={stageRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
         onWheel={handleWheel}
-        onPointerDown={handleDrawingStart}
-        onPointerMove={handleDrawingMove}
-        onPointerUp={handleDrawingEnd}
-        onPointerLeave={handleDrawingEnd}
-        viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
-        className={"touch-none h-screen w-screen cursor-crosshair"}
+        draggable={spacePressed}
       >
-        {paths.map((path, index) => (
-          <path
-            key={index}
-            d={path.d}
-            fill={path.fillColor}
-            stroke={path.strokeColor}
-            strokeWidth={path.strokeWidth}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            ref={path.id === boardStateRef.current.path?.id ? currPathElemRef : null}
-          />
-        ))}
-      </svg>
+        <Layer>
+          {paths.map((path) => (
+            <KonvaPath
+              id={path.id}
+              key={path.id}
+              data={path.d}
+              stroke={path.strokeColor}
+              strokeWidth={path.strokeWidth}
+              fill={path.fillColor}
+              x={path.x}
+              y={path.y}
+              scaleX={path.scaleX}
+              scaleY={path.scaleY}
+              rotation={path.rotation}
+              draggable={tool === "SELECTION" && selectedIDs.includes(path.id)}
+              listening={tool === "SELECTION" && selectedIDs.includes(path.id)}
+              ref={(node) => {
+                if (node) pathRefs.current.set(path.id, node);
+                else pathRefs.current.delete(path.id);
+              }}
+              onClick={handlePathClick}
+              onDragEnd={handlePathDragEnd}
+              onTransformEnd={handlePathTransformEnd}
+            />
+          ))}
+          <Transformer ref={transformerRef} />
+          {selectionRect && (
+            <Rect
+              x={Math.min(selectionRect.start.x, selectionRect.end.x)}
+              y={Math.min(selectionRect.start.y, selectionRect.end.y)}
+              width={Math.abs(selectionRect.start.x - selectionRect.end.x)}
+              height={Math.abs(selectionRect.start.y - selectionRect.end.y)}
+              fill={colors.blue["600"]}
+              stroke={colors.blue["600"]}
+              strokeWidth={3}
+              dash={[5, 5]}
+              opacity={0.2}
+            />
+          )}
+        </Layer>
+      </Stage>
       <HelpDialog open={helpDialogOpen} onClose={() => setHelpDialogOpen(false)} />
     </>
   );

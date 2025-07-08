@@ -77,6 +77,11 @@ class MockApiService {
           strokeColor: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
           fillColor: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
           strokeWidth,
+          x: 0,
+          y: 0,
+          scaleX: 1,
+          scaleY: 1,
+          rotation: 0,
         };
 
         const mockUpdate: ServerBoardUpdate = { type: "CREATE_OR_REPLACE_PATHS", paths: [newPath] };
