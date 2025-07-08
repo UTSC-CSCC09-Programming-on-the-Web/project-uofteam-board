@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { MdArrowBack, MdDelete, MdHelpOutline, MdOutlineRectangle } from "react-icons/md";
+import { MdArrowBack, MdDelete, MdHelpOutline } from "react-icons/md";
 import { Stage, Layer, Rect, Path as KonvaPath, Transformer } from "react-konva";
 import { RiPenNibLine, RiOpenaiFill } from "react-icons/ri";
+import { PiRectangleDashedDuotone } from "react-icons/pi";
 import colors from "tailwindcss/colors";
 import { v4 as uuid } from "uuid";
 import Konva from "konva";
@@ -417,18 +418,18 @@ export default function EditBoard({ params }: Route.ComponentProps) {
                   onClick={() => setTool("PEN")}
                   icon={<RiPenNibLine />}
                 />
+                <ToolButton
+                  label="Selection Tool"
+                  selected={tool === "SELECTION"}
+                  onClick={() => setTool("SELECTION")}
+                  icon={<PiRectangleDashedDuotone />}
+                />
                 {/* <ToolButton
               label="Line Tool"
               selected={tool === "PEN"}
               onClick={() => setTool("PEN")}
               icon={<TbLine />}
             /> */}
-                <ToolButton
-                  label="Rectangle Tool"
-                  selected={tool === "SELECTION"}
-                  onClick={() => setTool("SELECTION")}
-                  icon={<MdOutlineRectangle />}
-                />
                 {/* <ToolButton
               label="Circle Tool"
               selected={tool === "PEN"}
