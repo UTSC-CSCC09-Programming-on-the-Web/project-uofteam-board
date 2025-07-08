@@ -80,6 +80,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   const renderCount = useRef(0);
 
   const [fillColor, setFillColor] = useState("#fff085");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [strokeWidth, setStrokeWidth] = useState(4);
   const [strokeColor, setStrokeColor] = useState("#193cb8");
   const [selectedTool, setSelectedTool] = useState<ToolType>("PEN_TOOL");
@@ -109,8 +110,9 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   }, [params.bid]);
 
   useEffect(
-    () =>
-      API.listenForBoardUpdates(
+    () => {
+      console.log("called");
+      return API.listenForBoardUpdates(
         params.bid,
         (update) => {
           console.log("Received board update:", update);
@@ -153,7 +155,8 @@ export default function EditBoard({ params }: Route.ComponentProps) {
         (reason) => {
           alert(`Socket closed: ${reason}`);
         },
-      ),
+      )
+    },
     [params.bid],
   );
 
