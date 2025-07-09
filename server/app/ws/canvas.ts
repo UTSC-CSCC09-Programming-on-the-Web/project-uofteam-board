@@ -5,7 +5,7 @@ import { ClientBoardUpdate, Path, ServerBoardUpdate } from "#types/api.ts";
 import { Strokes } from "#models/Strokes.ts";
 
 
-const onUpdate = async (data: ClientBoardUpdate, boardId: number) => {
+const onUpdate = async (data: ClientBoardUpdate, boardId: number): Promise<ServerBoardUpdate | null> => {
   console.log("Received update:", data);
   switch (data.type) {
     case "CREATE_OR_REPLACE_PATHS": {
@@ -23,15 +23,15 @@ const onUpdate = async (data: ClientBoardUpdate, boardId: number) => {
           scaleY: path.scaleY,
           rotation: path.rotation,
         })
-      })
-      break;
+      });
+      return data satisfies ServerBoardUpdate;
     }
     case "GENERATIVE_FILL": {
-      break;
+      return null;
     }
     case "DELETE_PATHS": {
       await Strokes.destroy({ where: { strokeId: data.ids } });
-      break;
+      return data satisfies ServerBoardUpdate;
     }
   }
 }
@@ -69,13 +69,24 @@ export const registerWebSocket = (io: Server) => {
       return;
     }
     
+    socket.join(boardId);
+
     socket.on('disconnect', (reason) => { // Will leave room automatically
       console.log(`Client disconnected: ${socket.id}, reason: ${reason}`);
     });
 
     socket.on('update', async (data) => {
-      onUpdate(data satisfies ClientBoardUpdate, Number(boardId as string));
+      onUpdate(data satisfies ClientBoardUpdate, Number(boardId))
+        .then((update) => {
+          if (update) {
+            io.to(boardId).emit('update', update);
+          }
+        })
+        .catch((err) => {
+          console.error(`Error processing update for board ${boardId}:`, err);
+        });
     });
+
 
     const initialData = await initialLoad(boardId);
     if (initialData) {
