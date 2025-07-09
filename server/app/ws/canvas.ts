@@ -5,24 +5,32 @@ import { ClientBoardUpdate, Path, ServerBoardUpdate } from "#types/api.ts";
 import { Strokes } from "#models/Strokes.ts";
 
 
-const onUpdate = async (data: ClientBoardUpdate) => {
+const onUpdate = async (data: ClientBoardUpdate, boardId: number) => {
   console.log("Received update:", data);
   switch (data.type) {
     case "CREATE_OR_REPLACE_PATHS": {
       data.paths.forEach(async (path) => {
-        await Strokes.create({
+        await Strokes.upsert({
+          strokeId: path.id,
+          boardId: boardId,
           d: path.d,
           color: path.strokeColor,
           width: path.strokeWidth,
           fillColor: path.fillColor,
+          x: path.x,
+          y: path.y,
+          scaleX: path.scaleX,
+          scaleY: path.scaleY,
+          rotation: path.rotation,
         })
       })
       break;
     }
+    case "GENERATIVE_FILL": {
+      break;
+    }
     case "DELETE_PATHS": {
-      data.ids.forEach(async (strokeId) => {
-        await Strokes.destroy({ where: { strokeId } });
-      });
+      await Strokes.destroy({ where: { strokeId: data.ids } });
       break;
     }
   }
@@ -39,6 +47,11 @@ const initialLoad = async (boardId: string): Promise<ServerBoardUpdate | null> =
     strokeColor: stroke.color,
     strokeWidth: stroke.width,
     fillColor: stroke.fillColor,
+    x: stroke.x,
+    y: stroke.y,
+    scaleX: stroke.scaleX,
+    scaleY: stroke.scaleY,
+    rotation: stroke.rotation,
   } satisfies Path));
   return { type: "CREATE_OR_REPLACE_PATHS", paths } satisfies ServerBoardUpdate;
 }
@@ -61,7 +74,7 @@ export const registerWebSocket = (io: Server) => {
     });
 
     socket.on('update', async (data) => {
-      onUpdate(data satisfies ClientBoardUpdate);
+      onUpdate(data satisfies ClientBoardUpdate, Number(boardId as string));
     });
 
     const initialData = await initialLoad(boardId);

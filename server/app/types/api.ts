@@ -27,6 +27,11 @@ export interface Path {
   strokeColor: string;
   strokeWidth: number;
   fillColor: string;
+  x: number;
+  y: number;
+  scaleX: number;
+  scaleY: number;
+  rotation: number;
 }
 
 export type ServerBoardUpdate =
@@ -35,4 +40,5 @@ export type ServerBoardUpdate =
 
 export type ClientBoardUpdate =
   | { type: "CREATE_OR_REPLACE_PATHS"; paths: Path[] }
+  | { type: "GENERATIVE_FILL"; ids: string[] }
   | { type: "DELETE_PATHS"; ids: string[] };

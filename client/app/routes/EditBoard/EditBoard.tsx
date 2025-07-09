@@ -105,7 +105,6 @@ export default function EditBoard({ params }: Route.ComponentProps) {
 
   useEffect(
     () => {
-      console.log("called");
       return API.listenForBoardUpdates(
         params.bid,
         (update) => {

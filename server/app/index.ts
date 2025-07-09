@@ -7,7 +7,6 @@ import { boardsRouter } from "#routes/boards_router.ts";
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
-import { checkAuthSocket } from "#middleware/checkAuth.ts";
 import { registerWebSocket } from "#ws/canvas.ts";
 
 if (!process.env.SECRET_KEY) {
@@ -40,10 +39,10 @@ const io = new Server(server, {
   cors: corsConfig,
   path: "/ws/",
 });
-io.use((socket, next) => {
-  console.log(`New socket connection: ${socket.id}`);
-  next();
-});
+// io.use((socket, next) => {
+//   console.log(`New socket connection: ${socket.id}`);
+//   next();
+// });
 io.engine.use(sessionMiddleware);
 registerWebSocket(io);
 

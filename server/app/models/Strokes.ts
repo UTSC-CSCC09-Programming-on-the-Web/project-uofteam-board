@@ -3,10 +3,18 @@ import { sequelize } from "../datasource.ts";
 
 export class Strokes extends Model {
   declare strokeId: string;
+  declare boardId: number;
+
   declare d: string;
   declare color: string;
   declare width: number;
   declare fillColor: string;
+
+  declare x: number;
+  declare y: number;
+  declare scaleX: number;
+  declare scaleY: number;
+  declare rotation: number;
 }
 
 Strokes.init(
@@ -17,8 +25,16 @@ Strokes.init(
       primaryKey: true,
       defaultValue: DataTypes.UUID,
     },
+    boardId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "Boards",
+        key: "boardId",
+      },
+    },
     d: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     color: {
@@ -33,14 +49,26 @@ Strokes.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    boardId: {
-      type: DataTypes.INTEGER,
+    x: {
+      type: DataTypes.FLOAT,
       allowNull: false,
-      references: {
-        model: "Boards",
-        key: "boardId",
-      },
-    }
+    },
+    y: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    scaleX: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    scaleY: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    rotation: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
   },
   {
     sequelize,
