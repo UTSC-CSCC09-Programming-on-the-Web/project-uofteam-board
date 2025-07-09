@@ -20,7 +20,10 @@ const config = defineConfig([
   pluginReact.configs.flat.recommended,
   {
     files: ["**/*.tsx"],
-    rules: { "react/react-in-jsx-scope": "off" },
+    rules: {
+      "react/react-in-jsx-scope": "off",
+      "no-case-declarations": "off",
+    },
   },
 ]);
 

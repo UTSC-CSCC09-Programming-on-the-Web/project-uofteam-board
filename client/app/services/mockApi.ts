@@ -14,7 +14,7 @@ import { config } from "~/config";
 class MockApiService {
   private readonly client: AxiosInstance;
 
-  private mockBoardUpdates = new Map<string, ServerBoardUpdate[]>();
+  private mockBoardUpdates = new Map<string, ClientBoardUpdate[]>();
   private mockUpdateCallbacks = new Map<string, ((update: ServerBoardUpdate) => void)[]>();
   private mockIntervals = new Map<string, NodeJS.Timeout>();
 
@@ -77,6 +77,11 @@ class MockApiService {
           strokeColor: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
           fillColor: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
           strokeWidth,
+          x: 0,
+          y: 0,
+          scaleX: 1,
+          scaleY: 1,
+          rotation: 0,
         };
 
         const mockUpdate: ServerBoardUpdate = { type: "CREATE_OR_REPLACE_PATHS", paths: [newPath] };
@@ -88,7 +93,7 @@ class MockApiService {
     const pendingUpdates = this.mockBoardUpdates.get(id) || [];
     pendingUpdates.forEach((update) => {
       console.log(`Mocking delayed update for board ${id} from emit:`, update);
-      onUpdate(update);
+      if (update.type !== "GENERATIVE_FILL") onUpdate(update);
     });
     this.mockBoardUpdates.set(id, []);
 
@@ -119,7 +124,7 @@ class MockApiService {
     this.mockBoardUpdates.get(id)?.push(update);
     this.mockUpdateCallbacks.get(id)?.forEach((callback) => {
       console.log(`Mocking immediate feedback for board ${id} from emit:`, update);
-      callback(update);
+      if (update.type !== "GENERATIVE_FILL") callback(update);
     });
   }
 
