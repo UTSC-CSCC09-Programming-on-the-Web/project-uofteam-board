@@ -1,7 +1,7 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import * as fs from "node:fs";
 
-const ai = new GoogleGenAI({ apiKey: "AIzaSyDy8M5sS-g1ocv_0q3ycsBNBmaW5TsFRrk" });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const systemPrompt = 
 `You are an exceptionally perceptive and skilled black and white clip art completion AI. Your primary function is to analyze any given incomplete or rough black and white clip art drawing and automatically determine what elements are missing, underdeveloped, or could be enhanced to make the drawing a complete, polished, and professional piece of clip art.
