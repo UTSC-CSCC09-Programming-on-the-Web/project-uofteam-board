@@ -3,6 +3,8 @@ import express from 'express';
 import { checkCanvasAuth } from "#middleware/checkAuth.ts";
 import { ClientBoardUpdate, Path, ServerBoardUpdate } from "#types/api.ts";
 import { Strokes } from "#models/Strokes.ts";
+import { render } from "#image-ai/render.ts";
+import { main as aiModel } from "#image-ai/model.js";
 
 
 const onUpdate = async (data: ClientBoardUpdate, boardId: number): Promise<ServerBoardUpdate | null> => {
@@ -27,6 +29,8 @@ const onUpdate = async (data: ClientBoardUpdate, boardId: number): Promise<Serve
       return data satisfies ServerBoardUpdate;
     }
     case "GENERATIVE_FILL": {
+      const base64Image = await render(data.ids);
+      aiModel(base64Image);
       return null;
     }
     case "DELETE_PATHS": {
@@ -57,6 +61,9 @@ const initialLoad = async (boardId: string): Promise<ServerBoardUpdate | null> =
 }
 
 export const registerWebSocket = (io: Server) => {
+  
+  // render(['8f98b6a6-df79-41d4-b944-9f97e3b31f5f','06d2c47f-eb91-4df1-b7de-33691d48747c']);
+  
   io.on('connection', async (socket: Socket) => {
     const req = socket.request as express.Request;
     const session = req.session;
