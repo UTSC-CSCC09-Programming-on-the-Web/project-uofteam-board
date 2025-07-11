@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
-import type { Board, Paginated, ServerBoardUpdate, Response, User, ClientBoardUpdate } from "~/types"; // prettier-ignore
+import type { Board, Paginated, ServerBoardUpdate, Response, User, ClientBoardUpdate, Path } from "~/types"; // prettier-ignore
 import { config } from "~/config";
 
 class ApiService {
@@ -90,6 +90,10 @@ class ApiService {
     } else {
       console.warn(`Socket for board ${id} is not connected. Cannot emit update.`);
     }
+  }
+
+  public generativeFill(id: string, pathIDs: string[]): Promise<Response<Path[]>> {
+    return this.post(`/boards/${id}/generative-fill`, { pathIDs });
   }
 
   // -------------------------------------------------------------------------------------------------------------------
