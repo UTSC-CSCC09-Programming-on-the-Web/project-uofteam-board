@@ -22,6 +22,7 @@ export const computeBoundingBox = (paths: Path[]): BoundingBox => {
       scaleX: p.scaleX,
       scaleY: p.scaleY,
       rotation: p.rotation,
+      strokeWidth: p.strokeWidth,
     });
 
     const box = tempPath.getClientRect();
