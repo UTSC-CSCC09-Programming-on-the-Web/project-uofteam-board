@@ -15,9 +15,11 @@ import type { Board, Path } from "~/types";
 import { API } from "~/services";
 
 import { useSpacePressed } from "./useSpacePressed";
+import { GenFillDialog, type GenFillDialogState } from "./GenFillDialog";
 import { ColorPicker } from "./ColorPicker";
 import { ToolButton } from "./ToolButton";
 import { HelpDialog } from "./HelpDialog";
+import { computeBoundingBox } from "./utils";
 
 export function meta() {
   return [{ title: "Edit Board" }];
@@ -60,6 +62,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [strokeWidth, setStrokeWidth] = useState(4);
   const [strokeColor, setStrokeColor] = useState("#193cb8");
+  const [genFillState, setGenFillState] = useState<GenFillDialogState | null>(null);
 
   const [tool, setTool] = useState<Tool>("PEN");
   const [selectedIDs, setSelectedIDs] = useState<string[]>([]);
@@ -249,19 +252,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
           height: Math.abs(selectionRect.start.y - selectionRect.end.y),
         };
 
-        const selected = paths.filter((x) => {
-          const path = new Konva.Path({
-            data: x.d,
-            x: x.x,
-            y: x.y,
-            scaleX: x.scaleX,
-            scaleY: x.scaleY,
-            rotation: x.rotation,
-          });
-
-          return Konva.Util.haveIntersection(selBox, path.getClientRect());
-        });
-
+        const selected = paths.filter((x) => Konva.Util.haveIntersection(selBox, computeBoundingBox([x]))); // prettier-ignore
         setSelectedIDs(selected.map((x) => x.id));
         break;
 
@@ -359,6 +350,13 @@ export default function EditBoard({ params }: Route.ComponentProps) {
     );
   };
 
+  const handleGenFillConfirm = (oldPaths: Path[], newPaths: Path[]) => {
+    newPaths = newPaths.map((p) => ({ ...p, fromLocal: true }));
+    setPaths((prev) => prev.filter((p) => !oldPaths.some((op) => op.id === p.id)).concat(newPaths));
+    API.emitBoardUpdate(params.bid, { type: "DELETE_PATHS", ids: oldPaths.map((p) => p.id) });
+    API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: newPaths });
+  };
+
   if (!board) {
     return (
       <div className="fixed inset-0 flex justify-center items-center text-yellow-700/60 bg-yellow-50">
@@ -407,7 +405,8 @@ export default function EditBoard({ params }: Route.ComponentProps) {
                   label="Generative Fill"
                   icon={<RiOpenaiFill />}
                   onClick={() => {
-                    API.emitBoardUpdate(params.bid, { type: "GENERATIVE_FILL", ids: selectedIDs });
+                    const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
+                    setGenFillState({ boardID: params.bid, paths: selectedPaths });
                     setSelectedIDs([]);
                   }}
                 />
@@ -554,6 +553,11 @@ export default function EditBoard({ params }: Route.ComponentProps) {
           )}
         </Layer>
       </Stage>
+      <GenFillDialog
+        state={genFillState}
+        onConfirm={handleGenFillConfirm}
+        onClose={() => setGenFillState(null)}
+      />
       <HelpDialog open={helpDialogOpen} onClose={() => setHelpDialogOpen(false)} />
     </>
   );

@@ -74,8 +74,8 @@ class MockApiService {
         const newPath: Path = {
           id: `path-${uuid()}`,
           d: `M ${x},${y} h${size} v${size} h-${size} Z`,
-          strokeColor: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
-          fillColor: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
+          strokeColor: this.randomColor(),
+          fillColor: this.randomColor(),
           strokeWidth,
           x: 0,
           y: 0,
@@ -93,7 +93,7 @@ class MockApiService {
     const pendingUpdates = this.mockBoardUpdates.get(id) || [];
     pendingUpdates.forEach((update) => {
       console.log(`Mocking delayed update for board ${id} from emit:`, update);
-      if (update.type !== "GENERATIVE_FILL") onUpdate(update);
+      onUpdate(update);
     });
     this.mockBoardUpdates.set(id, []);
 
@@ -124,7 +124,63 @@ class MockApiService {
     this.mockBoardUpdates.get(id)?.push(update);
     this.mockUpdateCallbacks.get(id)?.forEach((callback) => {
       console.log(`Mocking immediate feedback for board ${id} from emit:`, update);
-      if (update.type !== "GENERATIVE_FILL") callback(update);
+      callback(update);
+    });
+  }
+
+  public generativeFill(id: string, pathIDs: string[]): Promise<Response<Path[]>> {
+    console.log(`Mocking generativeFill for board ${id} with paths:`, pathIDs);
+
+    const shapeTemplates: { name: string; d: string }[] = [
+      {
+        name: "smiley",
+        d: "M 50 10 A 40 40 0 1 1 49.99 10 Z M 35 35 A 5 5 0 1 1 34.99 35 Z M 65 35 A 5 5 0 1 1 64.99 35 Z M 35 60 Q 50 70 65 60",
+      },
+      {
+        name: "star",
+        d: "M 50 15 L 61 39 L 88 39 L 66 57 L 75 84 L 50 68 L 25 84 L 34 57 L 12 39 L 39 39 Z",
+      },
+      {
+        name: "heart",
+        d: "M 50 30 C 50 20, 70 20, 70 35 C 70 50, 50 60, 50 70 C 50 60, 30 50, 30 35 C 30 20, 50 20, 50 30 Z",
+      },
+      {
+        name: "blob",
+        d: "M 30 20 C 50 10, 70 10, 80 30 C 90 50, 70 70, 50 60 C 30 50, 10 40, 20 30 Z",
+      },
+    ];
+
+    const makePath = (): Path => {
+      const shape = shapeTemplates[Math.floor(Math.random() * shapeTemplates.length)];
+      const scale = 0.5 + Math.random() * 1.5;
+      const x = Math.floor(Math.random() * 300);
+      const y = Math.floor(Math.random() * 200);
+
+      return {
+        id: `path-${uuid()}`,
+        d: shape.d,
+        x,
+        y,
+        scaleX: scale,
+        scaleY: scale,
+        rotation: 0,
+        strokeWidth: 3,
+        strokeColor: this.randomColor(),
+        fillColor: "transparent",
+      };
+    };
+
+    const count = 2 + Math.floor(Math.random() * 3);
+    const paths: Path[] = Array.from({ length: count }, makePath);
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          status: 200,
+          error: null,
+          data: paths,
+        });
+      }, 1500);
     });
   }
 
@@ -161,6 +217,10 @@ class MockApiService {
         data: null,
       };
     }
+  }
+
+  private randomColor(): string {
+    return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
   }
 }
 
