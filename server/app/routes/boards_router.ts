@@ -1,8 +1,10 @@
 import express from "express";
-import { Boards } from "../models/Boards.ts";
-import type { Board, Paginated } from "../types/api.ts";
-import { checkAuth } from "../middleware/checkAuth.ts";
 import { Op } from "sequelize";
+import { Boards } from "#models/Boards.ts";
+import type { Board, Paginated, Path } from "#types/api.ts";
+import { checkAuth } from "#middleware/checkAuth.ts";
+import { render } from "#image-ai/render.ts";
+import { main as aiModel } from "#image-ai/model.ts";
 
 export const boardsRouter = express.Router();
 
@@ -82,3 +84,33 @@ boardsRouter.get("/:id", checkAuth, async (req, res) => {
     updatedAt: boardData.updatedAt.toISOString(),
   } satisfies Board);
 });
+
+boardsRouter.post("/:id/generative-fill", checkAuth, async (req, res) => {
+  const { pathIDs } = req.body;
+  const { id } = req.params;
+  if (!id || !(await Boards.findByPk(id))) {
+    res.status(404).json({ error: "Board not found" });
+    return;
+  }
+  if (!Array.isArray(pathIDs) || pathIDs.length === 0) {
+    res.status(400).json({ error: "Invalid path IDs" });
+    return;
+  }
+
+  const base64Image = await render(Number(id), pathIDs);
+  aiModel(base64Image);
+  res.json([
+    {
+      id: crypto.randomUUID(),
+      d: "M 10 10 L 100 100", // Simple SVG line from (10,10) to (100,100)
+      strokeColor: "#0F00F0",
+      strokeWidth: 2,
+      fillColor: "none",
+      x: 0,
+      y: 0,
+      scaleX: 1,
+      scaleY: 1,
+      rotation: 0,
+    } satisfies Path
+  ] satisfies Path[]);
+})

@@ -1,87 +1,64 @@
 import Konva from "konva";
 import { Strokes } from "#models/Strokes.ts";
+import type { Path } from "#types/api.ts";
+import * as KonvaUtil from "./utils";
 import fs from "fs";
 
-const PADDING = 100; // Padding around the image
+const PADDING = 50; // Padding around the image
 const SIZE = 1000; // Size of the image
 
-const safeMax = (a: number | undefined, b: number | undefined): number | undefined => {
-  if (a === undefined) return b;
-  if (b === undefined) return a;
-  return Math.max(a, b);
-}
-const safeMin = (a: number | undefined, b: number | undefined): number | undefined => {
-  if (a === undefined) return b;
-  if (b === undefined) return a;
-  return Math.min(a, b);
-}
-
-export async function render(ids: string[]): Promise<string> {
-  // Width and height will be set later based on the paths
-  const stage = new Konva.Stage({ width: 1, height: 1 });
-  const background = new Konva.Layer();
+export async function render(boardId: number, ids: string[]): Promise<string> {
+  const stage = new Konva.Stage({ width: SIZE, height: SIZE });
   const layer = new Konva.Layer();
-  stage.add(background);
-  stage.add(layer);
-  
-  let maxX: number | undefined = undefined;
-  let minX: number | undefined = undefined;
-  let maxY: number | undefined = undefined;
-  let minY: number | undefined = undefined;
 
-  const strokes = await Strokes.findAll({ where: { strokeId: ids } });
+  // White background
+  stage.add(new Konva.Layer().add(new Konva.Rect({
+    x: 0,
+    y: 0,
+    width: SIZE,
+    height: SIZE,
+    fill: 'white',
+  })));
+  stage.add(layer);
+
+  const strokes = await Strokes.findAll({ where: { strokeId: ids, boardId } });
   strokes.forEach((stroke) => {
     const newPath = new Konva.Path({
+      ...stroke,
       data: stroke.d,
       stroke: stroke.color,
-      fillColor: stroke.fillColor,
+      fill: stroke.fillColor,
       strokeWidth: stroke.width,
-      x: stroke.x,
-      y: stroke.y,
-      scaleX: stroke.scaleX,
-      scaleY: stroke.scaleY,
-      rotation: stroke.rotation,
     });
-
-    newPath.dataArray.forEach((line) => {
-      if (line.command !== 'L') return;
-      maxX = safeMax(maxX, newPath.scaleX() * Math.max(line.points[0], line.start.x));
-      maxY = safeMax(maxY, newPath.scaleY() * Math.max(line.points[1], line.start.y));
-      minX = safeMin(minX, newPath.scaleX() * Math.min(line.points[0], line.start.x));
-      minY = safeMin(minY, newPath.scaleY() * Math.min(line.points[1], line.start.y));
-    })
-
     layer.add(newPath);
   })
 
-  console.log("Max X:", maxX, "Min X:", minX, "Max Y:", maxY, "Min Y:", minY);
-  if (maxX === undefined || maxY === undefined || minX === undefined || minY === undefined) {
-    throw new Error("No paths found to render");
-  }
-  const imgWidth = maxX - minX + PADDING * 2;
-  const imgHeight = maxY - minY + PADDING * 2;
-  console.log("Image Width:", imgWidth, "Image Height:", imgHeight);
+  const box = KonvaUtil.computeBoundingBox(
+    strokes.map(stroke => ({
+      ...stroke,
+      id: stroke.strokeId,
+      d: stroke.d,
+      strokeColor: stroke.color,
+      strokeWidth: stroke.width,
+      fillColor: stroke.fillColor,
+    } satisfies Path))
+  );
 
-  const scaleX = SIZE / imgWidth;
-  const scaleY = SIZE / imgHeight;
-  const scale = Math.min(scaleX, scaleY);
-  console.log("Scale X:", scaleX, "Scale Y:", scaleY, "Final Scale:", scale);
+  const windowBox = {
+    x: PADDING,
+    y: PADDING,
+    width: SIZE - PADDING * 2,
+    height: SIZE - PADDING * 2,
+  } satisfies KonvaUtil.BoundingBox;
 
-  background.add(new Konva.Rect({
-    x: minX - PADDING,
-    y: minY - PADDING,
-    width: imgWidth + PADDING * 2,
-    height: imgHeight + PADDING * 2,
-    fill: 'white',
-  }))
+  const transform = KonvaUtil.computeTransformCentered(box, windowBox);
+  layer.scale({ x: transform.scale, y: transform.scale });
+  layer.x(layer.x() + transform.dx);
+  layer.y(layer.y() + transform.dy);
 
-  stage.width(imgWidth);
-  stage.height(imgHeight);
   const dataUrl = stage.toDataURL({
     mimeType: 'image/png',
-    pixelRatio: scale,
-    x: minX - PADDING,
-    y: minY - PADDING,
+    pixelRatio: 1,
   });
 
   const base64Image = dataUrl.split(';base64,').pop();

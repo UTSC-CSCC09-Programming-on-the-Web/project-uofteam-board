@@ -46,9 +46,9 @@ export interface Transform {
   dy: number;
 }
 
-export const computeTransform = (from: BoundingBox, to: BoundingBox): Transform => {
+export const computeTransformCentered = (from: BoundingBox, to: BoundingBox): Transform => {
   const scale = Math.min(to.width / from.width, to.height / from.height);
-  const dx = to.x - from.x * scale;
-  const dy = to.y - from.y * scale;
+  const dx = to.x + (to.width - from.width * scale) / 2 - from.x * scale;
+  const dy = to.y + (to.height - from.height * scale) / 2 - from.y * scale;
   return { scale, dx, dy };
-};
+}

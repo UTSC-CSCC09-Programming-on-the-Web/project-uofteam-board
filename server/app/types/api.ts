@@ -40,5 +40,4 @@ export type ServerBoardUpdate =
 
 export type ClientBoardUpdate =
   | { type: "CREATE_OR_REPLACE_PATHS"; paths: Path[] }
-  | { type: "GENERATIVE_FILL"; ids: string[] }
   | { type: "DELETE_PATHS"; ids: string[] };

@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "module": "esnext",
     "lib": ["es2024", "ESNext.Array", "ESNext.Collection", "ESNext.Iterator"],
     "target": "es2022",
     "strict": true,
@@ -12,6 +13,6 @@
     "noEmit": true,
     "allowImportingTsExtensions": true,
   },
-  "include": ["app/**/*.ts", "app/image-ai/model.js"],
+  "include": ["app/**/*.ts", "app/image-ai/model.ts"],
   "exclude": ["dist"]
 }
