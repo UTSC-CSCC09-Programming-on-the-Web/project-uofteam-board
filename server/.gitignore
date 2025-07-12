@@ -3,6 +3,7 @@
 /node_modules/
 /build/
 board.sqlite
+/app/image-ai/dump/*
 
 # IDEs
 /.idea/

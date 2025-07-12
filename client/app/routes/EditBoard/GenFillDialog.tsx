@@ -6,7 +6,7 @@ import { API } from "~/services";
 import { Dialog } from "~/components";
 import type { Path } from "~/types";
 
-import { computeBoundingBox, computeTransform, type Transform } from "./utils";
+import { computeBoundingBox, computeTransformCentered, type Transform } from "./utils";
 
 interface GenFillDialogState {
   boardID: string;
@@ -42,7 +42,7 @@ function GenFillDialog({ state, onConfirm, onClose }: GenFillDialogProps) {
 
     const targetBBox = computeBoundingBox(state.paths);
     const actualBBox = computeBoundingBox(res.data);
-    const boardTransform = computeTransform(actualBBox, targetBBox);
+    const boardTransform = computeTransformCentered(actualBBox, targetBBox);
     const transformedPaths = res.data.map((p) => ({
       ...p,
       x: p.x * boardTransform.scale + boardTransform.dx,
@@ -52,7 +52,7 @@ function GenFillDialog({ state, onConfirm, onClose }: GenFillDialogProps) {
     }));
 
     const transformedBBox = computeBoundingBox(transformedPaths);
-    const previewTransform = computeTransform(transformedBBox, {
+    const previewTransform = computeTransformCentered(transformedBBox, {
       x: previewPadding,
       y: previewPadding,
       width: previewWidth - previewPadding * 2,

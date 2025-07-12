@@ -20,3 +20,24 @@ export interface Paginated<T> {
   limit: number;
   data: T[];
 }
+
+export interface Path {
+  id: string;
+  d: string;
+  strokeColor: string;
+  strokeWidth: number;
+  fillColor: string;
+  x: number;
+  y: number;
+  scaleX: number;
+  scaleY: number;
+  rotation: number;
+}
+
+export type ServerBoardUpdate =
+  | { type: "CREATE_OR_REPLACE_PATHS"; paths: Path[] }
+  | { type: "DELETE_PATHS"; ids: string[] };
+
+export type ClientBoardUpdate =
+  | { type: "CREATE_OR_REPLACE_PATHS"; paths: Path[] }
+  | { type: "DELETE_PATHS"; ids: string[] };

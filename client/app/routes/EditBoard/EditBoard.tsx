@@ -59,6 +59,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   const renderCount = useRef(0);
 
   const [fillColor, setFillColor] = useState("#fff085");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [strokeWidth, setStrokeWidth] = useState(4);
   const [strokeColor, setStrokeColor] = useState("#193cb8");
   const [genFillState, setGenFillState] = useState<GenFillDialogState | null>(null);
@@ -106,8 +107,8 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   }, [selectedIDs]);
 
   useEffect(
-    () =>
-      API.listenForBoardUpdates(
+    () => {
+      return API.listenForBoardUpdates(
         params.bid,
         (update) => {
           console.log("Received board update:", update);
@@ -150,7 +151,8 @@ export default function EditBoard({ params }: Route.ComponentProps) {
         (reason) => {
           alert(`Socket closed: ${reason}`);
         },
-      ),
+      )
+    },
     [params.bid],
   );
 
@@ -464,6 +466,46 @@ export default function EditBoard({ params }: Route.ComponentProps) {
         width={width}
         height={height}
         ref={stageRef}
+        // onDragEnd={(e) => {
+        //   const stage = e.target.getStage();
+        //   if (!stage) return;
+        //   // Define max bounds
+        //   const MAX_WIDTH = 3000;
+        //   const MAX_HEIGHT = 2000;
+        //   const scale = stage.scaleX();
+        //   let x = stage.x();
+        //   let y = stage.y();
+
+        //   // Clamp so that the visible area does not go outside [0,0] to [MAX_WIDTH, MAX_HEIGHT]
+        //   const minX = Math.min(0, width - MAX_WIDTH * scale);
+        //   const maxX = 0;
+        //   const minY = Math.min(0, height - MAX_HEIGHT * scale);
+        //   const maxY = 0;
+
+        //   x = Math.max(minX, Math.min(x, maxX));
+        //   y = Math.max(minY, Math.min(y, maxY));
+        //   stage.position({ x, y });
+        // }}
+        // onWheel={(e) => {
+        //   handleWheel(e);
+        //   const stage = stageRef.current;
+        //   if (!stage) return;
+        //   // Define max bounds
+        //   const MAX_WIDTH = 3000;
+        //   const MAX_HEIGHT = 2000;
+        //   const scale = stage.scaleX();
+        //   let x = stage.x();
+        //   let y = stage.y();
+
+        //   const minX = Math.min(0, width - MAX_WIDTH * scale);
+        //   const maxX = 0;
+        //   const minY = Math.min(0, height - MAX_HEIGHT * scale);
+        //   const maxY = 0;
+
+        //   x = Math.max(minX, Math.min(x, maxX));
+        //   y = Math.max(minY, Math.min(y, maxY));
+        //   stage.position({ x, y });
+        // }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

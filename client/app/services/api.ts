@@ -5,7 +5,8 @@ import { config } from "~/config";
 
 class ApiService {
   private readonly client: AxiosInstance;
-  private sockets = new Map<string, Socket>();
+  private socket: Socket | null = null;
+  private boardId: string | null = null;
 
   constructor(baseURL: string) {
     this.client = axios.create({
@@ -49,13 +50,21 @@ class ApiService {
     onError: (error: Error) => void,
     onClose: (reason: string) => void,
   ): () => void {
-    if (this.sockets.has(id)) {
-      this.sockets.get(id)?.disconnect();
-      this.sockets.delete(id);
+    if (this.boardId === id) {
+      this.socket?.disconnect();
+      this.socket = null;
+      this.boardId = null;
     }
 
-    const socket = io(`${config.WS_BASE_URL}/boards/${id}`);
-    this.sockets.set(id, socket);
+    // Use the correct protocol and path for Socket.IO
+    const socket = io(config.WS_BASE_URL, {
+      path: "/ws/",
+      query: { boardId: id.toString() },
+      transports: ["websocket"],
+      withCredentials: true,
+    });
+    this.socket = socket;
+    this.boardId = id;
 
     socket.on("connect", () => {
       console.log(`Socket connected for board ${id} (socket ID: ${socket.id})`);
@@ -66,27 +75,28 @@ class ApiService {
     });
 
     socket.on("connect_error", (err) => {
+      console.log(`Socket connection error for board ${id}:`, err.stack || err);
       onError(err);
     });
 
     socket.on("disconnect", (reason) => {
-      this.sockets.delete(id);
+      this.socket = null;
+      this.boardId = null;
       onClose(reason);
     });
 
     return () => {
-      if (socket.connected) {
-        socket.disconnect();
-        this.sockets.delete(id);
-      }
+      console.log(`Disconnecting socket for board ${id} (socket ID: ${socket.id})`);
+      socket?.disconnect();
+      this.socket = null;
+      this.boardId = null;
     };
   }
 
   public emitBoardUpdate(id: string, update: ClientBoardUpdate): void {
-    const socket = this.sockets.get(id);
-    if (socket && socket.connected) {
+    if (this.socket?.connected) {
       console.log(`Emitting update:`, update);
-      socket.emit("update", update);
+      this.socket.emit("update", update);
     } else {
       console.warn(`Socket for board ${id} is not connected. Cannot emit update.`);
     }

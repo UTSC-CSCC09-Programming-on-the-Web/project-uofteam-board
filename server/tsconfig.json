@@ -1,11 +1,18 @@
 {
-  "extends": "@tsconfig/node22/tsconfig.json",
   "compilerOptions": {
+    "module": "esnext",
+    "lib": ["es2024", "ESNext.Array", "ESNext.Collection", "ESNext.Iterator"],
+    "target": "es2022",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    
     "rootDir": "./app",
     "outDir": "./build",
     "noEmit": true,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
   },
-  "include": ["app/**/*.ts"],
+  "include": ["app/**/*.ts", "app/image-ai/model.ts"],
   "exclude": ["dist"]
 }
