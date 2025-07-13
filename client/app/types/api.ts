@@ -1,18 +1,33 @@
-export type Response<T> =
+export type Response<T = null> =
   | { status: number; error: string; data: null }
   | { status: number; error: null; data: T };
+
+export type BoardPermission = "owner" | "editor" | "viewer";
 
 export interface Board {
   id: number;
   name: string;
   createdAt: string;
   updatedAt: string;
+  permission: BoardPermission;
 }
 
 export interface User {
   id: number;
-  email: string;
   name: string;
+  email: string;
+}
+
+export interface BoardShare {
+  user: User;
+  boardID: number;
+  permission: Exclude<BoardPermission, "owner">;
+}
+
+export interface BoardShareUpdate {
+  user: User;
+  boardID: number;
+  permission: Exclude<BoardPermission, "owner"> | "remove";
 }
 
 export interface Path {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { MdArrowBack, MdDelete, MdHelpOutline } from "react-icons/md";
+import { MdArrowBack, MdDelete, MdHelpOutline, MdSettings } from "react-icons/md";
 import { Stage, Layer, Rect, Path as KonvaPath, Transformer } from "react-konva";
 import { RiPenNibLine, RiOpenaiFill } from "react-icons/ri";
 import { PiRectangleDashedDuotone } from "react-icons/pi";
@@ -11,7 +11,7 @@ import clsx from "clsx";
 
 import type { Route } from "./+types/EditBoard";
 import { Button, Spinner } from "~/components";
-import type { Board, Path } from "~/types";
+import type { Board, BoardShare, Path } from "~/types";
 import { API } from "~/services";
 
 import { useSpacePressed } from "./useSpacePressed";
@@ -19,6 +19,7 @@ import { GenFillDialog, type GenFillDialogState } from "./GenFillDialog";
 import { ColorPicker } from "./ColorPicker";
 import { ToolButton } from "./ToolButton";
 import { HelpDialog } from "./HelpDialog";
+import { SettingsDialog } from "./SettingsDialog";
 import { computeBoundingBox } from "./utils";
 
 export function meta() {
@@ -56,6 +57,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   const navigate = useNavigate();
   const spacePressed = useSpacePressed();
   const [board, setBoard] = useState<Board | null>(null);
+  const [shares, setShares] = useState<BoardShare[]>([]);
   const renderCount = useRef(0);
 
   const [fillColor, setFillColor] = useState("#fff085");
@@ -74,6 +76,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   const stageRef = useRef<Konva.Stage>(null);
   const [paths, setPaths] = useState<PathWithLocal[]>([]);
 
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const boardStateRef = useRef<BoardState>({ type: "IDLE" });
 
@@ -83,14 +86,24 @@ export default function EditBoard({ params }: Route.ComponentProps) {
 
   useEffect(() => {
     (async () => {
-      const res = await API.getBoard(params.bid);
-      if (res.error !== null) {
-        if (res.status === 401) navigate("/");
-        else alert(`Error fetching board: ${res.error}`);
+      const [boardRes, boardSharesRes] = await Promise.all([
+        API.getBoard(Number(params.bid)),
+        API.getBoardShares(Number(params.bid)),
+      ]);
+
+      if (boardRes.error !== null) {
+        if (boardRes.status === 401 || boardRes.status === 403) navigate("/");
+        else alert(`Error fetching board: ${boardRes.error}`);
         return;
       }
 
-      setBoard(res.data);
+      if (boardSharesRes.error !== null) {
+        alert(`Error fetching board shares: ${boardSharesRes.error}`);
+        return;
+      }
+
+      setBoard(boardRes.data);
+      setShares(boardSharesRes.data);
     })();
   }, [params.bid]);
 
@@ -355,6 +368,11 @@ export default function EditBoard({ params }: Route.ComponentProps) {
     API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: newPaths });
   };
 
+  const handleSettingsUpdate = (board: Board, shares: BoardShare[]) => {
+    setBoard(board);
+    setShares(shares);
+  };
+
   if (!board) {
     return (
       <div className="fixed inset-0 flex justify-center items-center text-yellow-700/60 bg-yellow-50">
@@ -382,83 +400,99 @@ export default function EditBoard({ params }: Route.ComponentProps) {
             >
               Dashboard
             </Button>
-            <h1 className="text-2xl font-bold text-blue-800">Board Name {renderCount.current}</h1>
+            <h1 className="text-2xl font-bold text-blue-800">
+              {board.name} (renders: {renderCount.current})
+            </h1>
           </div>
-          <div className="flex items-center gap-2 pointer-events-auto">
-            {selectedIDs.length > 0 ? (
-              <>
-                <ToolButton
-                  selected
-                  color="danger"
-                  label="Delete"
-                  icon={<MdDelete />}
-                  onClick={() => {
-                    setPaths((prev) => prev.filter((path) => !selectedIDs.includes(path.id)));
-                    API.emitBoardUpdate(params.bid, { type: "DELETE_PATHS", ids: selectedIDs });
-                    setSelectedIDs([]);
-                  }}
-                />
-                <ToolButton
-                  selected={false}
-                  label="Generative Fill"
-                  icon={<RiOpenaiFill />}
-                  onClick={() => {
-                    const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
-                    setGenFillState({ boardID: params.bid, paths: selectedPaths });
-                    setSelectedIDs([]);
-                  }}
-                />
-              </>
-            ) : (
-              <>
-                <ToolButton
-                  label="Pen Tool"
-                  selected={tool === "PEN"}
-                  onClick={() => setTool("PEN")}
-                  icon={<RiPenNibLine />}
-                />
-                <ToolButton
-                  label="Selection Tool"
-                  selected={tool === "SELECTION"}
-                  onClick={() => setTool("SELECTION")}
-                  icon={<PiRectangleDashedDuotone />}
-                />
-                {/* <ToolButton
+          {(board.permission === "owner" || board.permission === "editor") && (
+            <div className="flex items-center gap-2 pointer-events-auto">
+              {selectedIDs.length > 0 ? (
+                <>
+                  <ToolButton
+                    selected
+                    color="danger"
+                    label="Delete"
+                    icon={<MdDelete />}
+                    onClick={() => {
+                      setPaths((prev) => prev.filter((path) => !selectedIDs.includes(path.id)));
+                      API.emitBoardUpdate(params.bid, { type: "DELETE_PATHS", ids: selectedIDs });
+                      setSelectedIDs([]);
+                    }}
+                  />
+                  <ToolButton
+                    selected={false}
+                    label="Generative Fill"
+                    icon={<RiOpenaiFill />}
+                    onClick={() => {
+                      const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
+                      setGenFillState({ boardID: params.bid, paths: selectedPaths });
+                      setSelectedIDs([]);
+                    }}
+                  />
+                </>
+              ) : (
+                <>
+                  <ToolButton
+                    label="Pen Tool"
+                    selected={tool === "PEN"}
+                    onClick={() => setTool("PEN")}
+                    icon={<RiPenNibLine />}
+                  />
+                  <ToolButton
+                    label="Selection Tool"
+                    selected={tool === "SELECTION"}
+                    onClick={() => setTool("SELECTION")}
+                    icon={<PiRectangleDashedDuotone />}
+                  />
+                  {/* <ToolButton
               label="Line Tool"
               selected={tool === "PEN"}
               onClick={() => setTool("PEN")}
               icon={<TbLine />}
             /> */}
-                {/* <ToolButton
+                  {/* <ToolButton
               label="Circle Tool"
               selected={tool === "PEN"}
               onClick={() => setTool("PEN")}
               icon={<MdOutlineCircle />}
             /> */}
-                <ColorPicker value={strokeColor} onChange={setStrokeColor} />
-                <ColorPicker value={fillColor} onChange={setFillColor} />
-              </>
-            )}
-          </div>
+                  <ColorPicker value={strokeColor} onChange={setStrokeColor} />
+                  <ColorPicker value={fillColor} onChange={setFillColor} />
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <div className="fixed bottom-0 left-0 right-0 z-10 p-4 flex justify-between pointer-events-none">
         <div className="flex gap-2 pointer-events-auto">
-          <Button size="sm" onClick={handleZoomIn}>
+          <Button size="sm" onClick={handleZoomIn} variant="neutral">
             +
           </Button>
-          <Button size="sm" onClick={handleZoomOut}>
+          <Button size="sm" onClick={handleZoomOut} variant="neutral">
             -
           </Button>
         </div>
-        <Button
-          size="sm"
-          onClick={() => setHelpDialogOpen(true)}
-          icon={<MdHelpOutline size="1.3em" />}
-          className="pointer-events-auto"
-        >
-          Help
-        </Button>
+        <div className="flex gap-2 pointer-events-auto">
+          <Button
+            size="sm"
+            onClick={() => setHelpDialogOpen(true)}
+            icon={<MdHelpOutline size="1.3em" />}
+            variant="neutral"
+          >
+            Help
+          </Button>
+          {board.permission === "owner" && (
+            <Button
+              size="sm"
+              onClick={() => setSettingsDialogOpen(true)}
+              icon={<MdSettings size="1.3em" />}
+              variant="neutral"
+            >
+              Settings
+            </Button>
+          )}
+        </div>
       </div>
       <Stage
         width={width}
@@ -515,6 +549,13 @@ export default function EditBoard({ params }: Route.ComponentProps) {
         state={genFillState}
         onConfirm={handleGenFillConfirm}
         onClose={() => setGenFillState(null)}
+      />
+      <SettingsDialog
+        open={settingsDialogOpen}
+        onClose={() => setSettingsDialogOpen(false)}
+        board={board}
+        shares={shares}
+        onUpdate={handleSettingsUpdate}
       />
       <HelpDialog open={helpDialogOpen} onClose={() => setHelpDialogOpen(false)} />
     </>

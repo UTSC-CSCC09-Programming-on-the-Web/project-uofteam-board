@@ -1,14 +1,6 @@
 import { v4 as uuid } from "uuid";
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
-import type {
-  Board,
-  Paginated,
-  Path,
-  ServerBoardUpdate,
-  Response,
-  User,
-  ClientBoardUpdate,
-} from "~/types";
+import type { Board, Paginated, Path, ServerBoardUpdate, Response, User, ClientBoardUpdate, BoardShare, BoardPermission, BoardShareUpdate } from "~/types"; // prettier-ignore
 import { config } from "~/config";
 
 class MockApiService {
@@ -38,20 +30,97 @@ class MockApiService {
     return this.get("/auth/me");
   }
 
-  public getBoards(
+  public async getBoards(
     page: number,
     limit: number,
     query: string,
   ): Promise<Response<Paginated<Board>>> {
-    return this.get("/boards", { params: { page, limit, query } });
+    const res = await this.get<Paginated<Board>>("/boards", { params: { page, limit, query } });
+    if (res.data !== null) res.data.data = res.data.data.map((board) => ({ ...board, permission: board.permission || "owner" })); // prettier-ignore
+    return res;
   }
 
   public createBoard(name: string): Promise<Response<Board>> {
     return this.post("/boards", { name });
   }
 
-  public getBoard(id: string): Promise<Response<Board>> {
-    return this.get(`/boards/${id}`);
+  public async getBoard(boardID: number): Promise<Response<Board>> {
+    const res = await this.get<Board>(`/boards/${boardID}`);
+    if (res.data !== null && !res.data.permission) res.data.permission = "owner";
+    return res;
+  }
+
+  public async renameBoard(boardID: number, name: string): Promise<Response<Board>> {
+    console.log(`Mocking renameBoard for board ${boardID} to "${name}"`);
+    const res = await this.getBoard(boardID);
+    if (res.data !== null) res.data.name = name;
+    return res;
+  }
+
+  public deleteBoard(boardID: number): Promise<Response<Board>> {
+    console.log(`Mocking delete for board ${boardID}`);
+    return this.getBoard(boardID);
+  }
+
+  public getBoardShares(boardID: number): Promise<Response<BoardShare[]>> {
+    console.log(`Mocking getBoardShares for board ${boardID}`);
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          status: 200,
+          error: null,
+          data: [
+            {
+              boardID,
+              permission: "editor",
+              user: { id: 1, name: "John Doe", email: "johndoe@gmail.com" },
+            },
+            {
+              boardID,
+              permission: "viewer",
+              user: { id: 2, name: "Jane Smith", email: "janesmith@gmail.com" },
+            },
+          ],
+        });
+      }, 1000);
+    });
+  }
+
+  public shareBoard(boardID: number, userEmail: string): Promise<Response<BoardShare>> {
+    console.log(`Mocking shareBoard for board ${boardID} with email ${userEmail}`);
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          status: 200,
+          error: null,
+          data: {
+            boardID,
+            permission: "viewer",
+            user: { id: Math.floor(Math.random() * 1000), name: "New User", email: userEmail },
+          },
+        });
+      }, 2000);
+    });
+  }
+
+  public updateBoardShares(
+    boardID: number,
+    updates: BoardShareUpdate[],
+  ): Promise<Response<BoardShare[]>> {
+    console.log(`Mocking updateBoardShares for board ${boardID}`);
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const updatedShares = updates
+          .filter((x) => x.permission !== "remove")
+          .map<BoardShare>((update) => ({
+            boardID,
+            permission: update.permission as Exclude<BoardPermission, "owner">,
+            user: { id: update.user.id, name: update.user.name, email: update.user.email },
+          }));
+
+        resolve({ status: 200, error: null, data: updatedShares });
+      }, 1500);
+    });
   }
 
   public listenForBoardUpdates(
