@@ -42,14 +42,13 @@ const aiRetryExponential = async (config: GenerateContentParameters, retries = R
       if (i === retries - 1) {
         throw error; // Rethrow the error if all retries fail
       }
-      console.warn(`Attempt ${i + 1} failed: ${error}. Retrying in ${delay}ms...`);
+      console.warn(`AI model attempt ${i + 1} failed: ${error}. Retrying in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
       delay *= 2; // Exponential backoff
     }
   }
 }
 
-// @param {string} base64Image - The base64 encoded image data to be processed.
 export async function main(base64Image: string) {
   console.log("Starting AI content generation...");
 
@@ -66,7 +65,7 @@ export async function main(base64Image: string) {
     ],
     config: {
       responseModalities: [Modality.TEXT, Modality.IMAGE],
-      temperature: 0.7,
+      temperature: 0.7, // 0.0 to 1.0, the smaller it is the less creative the output
     },
   } satisfies GenerateContentParameters);
   
@@ -78,23 +77,21 @@ export async function main(base64Image: string) {
   if (!candidate || !candidate.content || !candidate.content.parts) {
     throw new Error("No content found in AI response.");
   }
-
+  
   for (const part of candidate.content.parts) {
-    // Based on the part type, either show the text or save the image
-    if (part.text) {
-      console.log("GOT AI TEXT:", part.text);
-    } else if (part.inlineData) {
-      const imageData = part.inlineData.data;
-      if (typeof imageData === "string") {
-        const buffer = Buffer.from(imageData, "base64");
-        const filename = `ai_${Date.now()}.png`;
-        fs.writeFileSync(`./app/image-ai/dump/${filename}`, buffer);
+    if (!part.inlineData) { // Not the image part
+      continue;
+    }
+    const imageData = part.inlineData.data;
+    if (imageData) {
+      const buffer = Buffer.from(imageData, "base64");
+      const filename = `${Date.now()}_ai.png`;
+      fs.writeFile(`./app/image-ai/dump/${filename}`, buffer, () => {
         console.log(`Image saved as ${filename}`);
-      } else {
-        console.warn("No image data found or image data is not a string.");
-      }
+      });
+      return imageData; // Return the base64 image data
     }
   }
-
-  console.log(response);
+  
+  throw new Error("No image data found in AI response");
 }

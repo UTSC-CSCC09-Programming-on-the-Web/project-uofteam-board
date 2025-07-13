@@ -7,7 +7,7 @@ import fs from "fs";
 const PADDING = 50; // Padding around the image
 const SIZE = 1000; // Size of the image
 
-export async function render(boardId: number, ids: string[]): Promise<string> {
+export const renderPaths = (paths: Path[]): string => {
   const stage = new Konva.Stage({ width: SIZE, height: SIZE });
   const layer = new Konva.Layer();
 
@@ -21,29 +21,17 @@ export async function render(boardId: number, ids: string[]): Promise<string> {
   })));
   stage.add(layer);
 
-  const strokes = await Strokes.findAll({ where: { strokeId: ids, boardId } });
-  strokes.forEach((stroke) => {
-    const newPath = new Konva.Path({
-      ...stroke,
-      data: stroke.d,
-      stroke: stroke.color,
-      fill: stroke.fillColor,
-      strokeWidth: stroke.width,
-    });
-    layer.add(newPath);
+  paths.forEach((path) => {
+    layer.add(new Konva.Path({
+      ...path,
+      data: path.d,
+      stroke: path.strokeColor,
+      fill: path.fillColor,
+      strokeWidth: path.strokeWidth
+    }));
   })
 
-  const box = KonvaUtil.computeBoundingBox(
-    strokes.map(stroke => ({
-      ...stroke,
-      id: stroke.strokeId,
-      d: stroke.d,
-      strokeColor: stroke.color,
-      strokeWidth: stroke.width,
-      fillColor: stroke.fillColor,
-    } satisfies Path))
-  );
-
+  const box = KonvaUtil.computeBoundingBox(paths);
   const windowBox = {
     x: PADDING,
     y: PADDING,
@@ -56,19 +44,51 @@ export async function render(boardId: number, ids: string[]): Promise<string> {
   layer.x(layer.x() + transform.dx);
   layer.y(layer.y() + transform.dy);
 
-  const dataUrl = stage.toDataURL({
+  const base64 = stage.toDataURL({
     mimeType: 'image/png',
     pixelRatio: 1,
-  });
+  }).split(';base64,').pop();
 
-  const base64Image = dataUrl.split(';base64,').pop();
+  if (!base64) {
+    throw Error(`Could not render paths to base64 image. Paths:${paths}`);
+  }
+
+  if (process.env.SAVE_IMAGES_DEBUG_ENABLED === "1") {
+    const filename = `rend_${Date.now()}.png`;
+    fs.writeFile(`./temp/${filename}`, base64, {encoding: 'base64'}, () => {
+      console.log('File created');
+    });
+  }
+
+  return base64;
+}
+
+export async function render(boardId: number, ids: string[]): Promise<string> {
+  const strokes = await Strokes.findAll({ where: { strokeId: ids, boardId } });
+  const paths = strokes.map((stroke) => ({
+    id: stroke.strokeId,
+    d: stroke.d,
+    strokeColor: stroke.color,
+    strokeWidth: stroke.width,
+    fillColor: stroke.fillColor,
+    x: stroke.x,
+    y: stroke.y,
+    scaleX: stroke.scaleX,
+    scaleY: stroke.scaleY,
+    rotation: stroke.rotation,
+  })) satisfies Path[]
+  
+  const base64Image = await renderPaths(paths);
   if (!base64Image) {
     throw new Error("Failed to extract base64 image data");
   }
-  const filename = `img_${Date.now()}.png`;
-  fs.writeFile(`./app/image-ai/dump/${filename}`, base64Image, {encoding: 'base64'}, () => {
-    console.log('File created');
-  });
+
+  if (process.env.SAVE_IMAGES_DEBUG_ENABLED === "1") {
+    const filename = `${Date.now()}_img.png`;
+    fs.writeFile(`./app/image-ai/dump/${filename}`, base64Image, {encoding: 'base64'}, () => {
+      console.log('File created');
+    });
+  }
 
   return base64Image;
 }

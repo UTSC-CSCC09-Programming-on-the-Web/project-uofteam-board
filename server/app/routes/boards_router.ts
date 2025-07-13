@@ -5,6 +5,7 @@ import type { Board, Paginated, Path } from "#types/api.ts";
 import { checkAuth } from "#middleware/checkAuth.ts";
 import { render } from "#image-ai/render.ts";
 import { main as aiModel } from "#image-ai/model.ts";
+import { vectorizeBase64 } from "#image-ai/vectorize.ts";
 
 export const boardsRouter = express.Router();
 
@@ -97,20 +98,14 @@ boardsRouter.post("/:id/generative-fill", checkAuth, async (req, res) => {
     return;
   }
 
-  const base64Image = await render(Number(id), pathIDs);
-  aiModel(base64Image);
-  res.json([
-    {
-      id: crypto.randomUUID(),
-      d: "M 10 10 L 100 100", // Simple SVG line from (10,10) to (100,100)
-      strokeColor: "#0F00F0",
-      strokeWidth: 2,
-      fillColor: "none",
-      x: 0,
-      y: 0,
-      scaleX: 1,
-      scaleY: 1,
-      rotation: 0,
-    } satisfies Path
-  ] satisfies Path[]);
+  try {
+    const imgBase64 = await render(Number(id), pathIDs);
+    const newImgBase64 = await aiModel(imgBase64);
+    const paths = await vectorizeBase64(newImgBase64)
+    res.json(paths satisfies Path[]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create new image" });
+    console.error("Error generating new image:", err);
+    return;
+  }
 })
