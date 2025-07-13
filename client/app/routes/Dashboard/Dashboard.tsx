@@ -123,6 +123,10 @@ export default function Dashboard() {
                 onClick={() => navigate(`/boards/${x.id}`)}
                 chips={[
                   {
+                    label: "Role",
+                    value: x.permission,
+                  },
+                  {
                     label: "Modified",
                     value: new Date(x.updatedAt).toLocaleString([], {
                       month: "long",

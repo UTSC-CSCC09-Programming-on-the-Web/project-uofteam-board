@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
-import type { Board, Paginated, ServerBoardUpdate, Response, User, ClientBoardUpdate, Path } from "~/types"; // prettier-ignore
+import type { Board, Paginated, ServerBoardUpdate, Response, User, ClientBoardUpdate, Path, BoardShare, BoardShareUpdate } from "~/types"; // prettier-ignore
 import { config } from "~/config";
 
 class ApiService {
@@ -40,8 +40,31 @@ class ApiService {
     return this.post("/boards", { name });
   }
 
-  public getBoard(id: string): Promise<Response<Board>> {
-    return this.get(`/boards/${id}`);
+  public getBoard(boardID: number): Promise<Response<Board>> {
+    return this.get(`/boards/${boardID}`);
+  }
+
+  public renameBoard(boardID: number, name: string): Promise<Response<Board>> {
+    return this.post(`/boards/${boardID}/rename`, { name });
+  }
+
+  public deleteBoard(boardID: number): Promise<Response<Board>> {
+    return this.delete(`/boards/${boardID}`);
+  }
+
+  public getBoardShares(boardID: number): Promise<Response<BoardShare[]>> {
+    return this.get(`/boards/${boardID}/shares`);
+  }
+
+  public shareBoard(boardID: number, userEmail: string): Promise<Response<BoardShare>> {
+    return this.post(`/boards/${boardID}/shares`, { userEmail });
+  }
+
+  public updateBoardShares(
+    boardID: number,
+    updates: BoardShareUpdate[],
+  ): Promise<Response<BoardShare[]>> {
+    return this.post(`/boards/${boardID}/shares/update`, updates);
   }
 
   public listenForBoardUpdates(

@@ -28,7 +28,7 @@ const variantDisabledClasses: Record<ButtonVariant, string> = {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "px-3 h-9 text-sm",
+  sm: "px-3 h-10 text-sm",
   md: "px-4 h-12 text-md md:text-xl",
 };
 
