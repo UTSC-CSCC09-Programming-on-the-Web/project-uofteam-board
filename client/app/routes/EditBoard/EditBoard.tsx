@@ -8,6 +8,7 @@ import colors from "tailwindcss/colors";
 import { v4 as uuid } from "uuid";
 import Konva from "konva";
 import clsx from "clsx";
+import color from "color";
 
 import type { Route } from "./+types/EditBoard";
 import { Button, Spinner } from "~/components";
@@ -505,30 +506,36 @@ export default function EditBoard({ params }: Route.ComponentProps) {
         draggable={spacePressed}
       >
         <Layer>
-          {paths.map((path) => (
-            <KonvaPath
-              id={path.id}
-              key={path.id}
-              data={path.d}
-              stroke={path.strokeColor}
-              strokeWidth={path.strokeWidth}
-              fill={path.fillColor}
-              x={path.x}
-              y={path.y}
-              scaleX={path.scaleX}
-              scaleY={path.scaleY}
-              rotation={path.rotation}
-              draggable={tool === "SELECTION" && selectedIDs.includes(path.id)}
-              listening={tool === "SELECTION" && selectedIDs.includes(path.id)}
-              ref={(node) => {
-                if (node) pathRefs.current.set(path.id, node);
-                else pathRefs.current.delete(path.id);
-              }}
-              onClick={handlePathClick}
-              onDragEnd={handlePathDragEnd}
-              onTransformEnd={handlePathTransformEnd}
-            />
-          ))}
+          {paths.map((path) => {
+            const noSelection = selectedIDs.length === 0;
+            const isSelected = tool === "SELECTION" && selectedIDs.includes(path.id);
+            const fadeColor = (c: string) => c === "transparent" ? c : color(c).mix(color("white"), 0.8).string(); // prettier-ignore
+
+            return (
+              <KonvaPath
+                id={path.id}
+                key={path.id}
+                data={path.d}
+                strokeWidth={path.strokeWidth}
+                stroke={isSelected || noSelection ? path.strokeColor : fadeColor(path.strokeColor)}
+                fill={isSelected || noSelection ? path.fillColor : fadeColor(path.fillColor)}
+                x={path.x}
+                y={path.y}
+                scaleX={path.scaleX}
+                scaleY={path.scaleY}
+                rotation={path.rotation}
+                draggable={isSelected}
+                listening={isSelected}
+                ref={(node) => {
+                  if (node) pathRefs.current.set(path.id, node);
+                  else pathRefs.current.delete(path.id);
+                }}
+                onClick={handlePathClick}
+                onDragEnd={handlePathDragEnd}
+                onTransformEnd={handlePathTransformEnd}
+              />
+            );
+          })}
           <Transformer ref={transformerRef} />
           {selectionRect && (
             <Rect
