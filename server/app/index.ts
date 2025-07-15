@@ -4,6 +4,7 @@ import session from "express-session";
 import { logger } from "#middleware/logger.js";
 import { usersRouter } from "#routes/users_router.ts";
 import { boardsRouter } from "#routes/boards_router.ts";
+import { sharesSubRouter } from "#routes/shares_router.ts";
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
@@ -59,6 +60,7 @@ app.get("/", (req, res) => {
   res.end();
 });
 
+boardsRouter.use("/:id/shares", sharesSubRouter);
 app.use("/api/auth", usersRouter);
 app.use("/api/boards", boardsRouter);
 

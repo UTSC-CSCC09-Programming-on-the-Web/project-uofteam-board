@@ -85,10 +85,12 @@ export async function main(base64Image: string) {
     const imageData = part.inlineData.data;
     if (imageData) {
       const buffer = Buffer.from(imageData, "base64");
-      const filename = `${Date.now()}_ai.png`;
-      fs.writeFile(`./app/image-ai/dump/${filename}`, buffer, () => {
-        console.log(`Image saved as ${filename}`);
-      });
+      if (process.env.SAVE_IMAGES_DEBUG_ENABLED === "1") {
+        const filename = `${Date.now()}_ai.png`;
+        fs.writeFile(`./app/image-ai/dump/${filename}`, buffer, () => {
+          console.log(`Image saved as ${filename}`);
+        });
+      }
       return imageData; // Return the base64 image data
     }
   }

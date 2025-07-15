@@ -45,7 +45,7 @@ class ApiService {
   }
 
   public renameBoard(boardID: number, name: string): Promise<Response<Board>> {
-    return this.post(`/boards/${boardID}/rename`, { name });
+    return this.patch(`/boards/${boardID}`, { name });
   }
 
   public deleteBoard(boardID: number): Promise<Response<Board>> {
@@ -138,9 +138,13 @@ class ApiService {
   private post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<Response<T>> {
     return this.request<T>({ ...config, method: "post", url, data });
   }
-
+  
   private delete<T>(url: string, config?: AxiosRequestConfig): Promise<Response<T>> {
     return this.request<T>({ ...config, method: "delete", url });
+  }
+  
+  private patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<Response<T>> {
+    return this.request<T>({ ...config, method: "patch", url, data });
   }
 
   private async request<T>(config: AxiosRequestConfig): Promise<Response<T>> {

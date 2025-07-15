@@ -1,5 +1,5 @@
-import { Boards } from "#models/Boards.ts";
-import { User } from "#types/api.ts";
+import { BoardShares } from "#models/BoardShares.ts";
+import { BoardPermission, User } from "#types/api.ts";
 import { Request, Response, NextFunction } from "express";
 
 
@@ -11,11 +11,15 @@ export function checkAuth(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-export async function checkCanvasAuth(boardId: string, session: User): Promise<boolean> {
-    const board = await Boards.findByPk(boardId);
-  if (!board || board.ownerId !== session.id) {
-    return false;
+export async function checkCanvasAuth(boardId: string, session: User): Promise<BoardPermission | null> {
+  const board = await BoardShares.findOne({
+    where: {
+      boardId,
+      userId: session.id
+    }
+  });
+  if (board) {
+    return board.permission;
   }
-
-  return true;
+  return null;
 }

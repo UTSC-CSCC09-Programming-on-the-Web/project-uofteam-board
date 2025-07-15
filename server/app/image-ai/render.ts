@@ -53,13 +53,6 @@ export const renderPaths = (paths: Path[]): string => {
     throw Error(`Could not render paths to base64 image. Paths:${paths}`);
   }
 
-  if (process.env.SAVE_IMAGES_DEBUG_ENABLED === "1") {
-    const filename = `rend_${Date.now()}.png`;
-    fs.writeFile(`./temp/${filename}`, base64, {encoding: 'base64'}, () => {
-      console.log('File created');
-    });
-  }
-
   return base64;
 }
 

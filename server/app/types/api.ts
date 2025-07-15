@@ -1,8 +1,23 @@
+export type BoardPermission = "owner" | "editor" | "viewer";
+
 export interface Board {
   id: number;
   name: string;
   createdAt: string;
   updatedAt: string;
+  permission: BoardPermission;
+}
+
+export interface BoardShare {
+  user: User;
+  boardID: number;
+  permission: Exclude<BoardPermission, "owner">;
+}
+
+export interface BoardShareUpdate {
+  user: User;
+  boardID: number;
+  permission: Exclude<BoardPermission, "owner"> | "remove";
 }
 
 export interface User {

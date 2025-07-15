@@ -3,7 +3,7 @@ import express from 'express';
 import { checkCanvasAuth } from "#middleware/checkAuth.ts";
 import { ClientBoardUpdate, Path, ServerBoardUpdate } from "#types/api.ts";
 import { Strokes } from "#models/Strokes.ts";
-
+import util from 'util';
 
 const onUpdate = async (data: ClientBoardUpdate, boardId: number): Promise<ServerBoardUpdate | null> => {
   console.log("Received update:", data);
@@ -60,11 +60,16 @@ export const registerWebSocket = (io: Server) => {
     const boardId = socket.handshake.query.boardId as string | undefined;
     
     console.log(`New socket connection: ${socket.id}, session: ${session.user}`);
-    if (!session.user || !boardId || !(await checkCanvasAuth(boardId, session.user))) {
+    console.log(util.inspect(session.user, false, null));
+
+    const userAuth = boardId && session.user ? await checkCanvasAuth(boardId, session.user) : undefined;
+    if (!boardId || !userAuth) {
       console.log(`Bad socket request found for socket: ${socket.id}`);
       socket.disconnect();
       return;
     }
+
+    // TODO: check if they are a viewer
     
     // Join the room for the board
     console.log(`Client ${socket.id} joining board room: ${boardId}`);
