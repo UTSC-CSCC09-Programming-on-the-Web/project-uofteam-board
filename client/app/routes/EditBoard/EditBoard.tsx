@@ -162,7 +162,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
           alert(`Error in board updates: ${error.message}`);
         },
         (reason) => {
-          alert(`Socket closed: ${reason}`);
+          console.warn(`Socket closed: ${reason}`);
         },
       ),
     [params.bid],
