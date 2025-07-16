@@ -59,7 +59,6 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   const spacePressed = useSpacePressed();
   const [board, setBoard] = useState<Board | null>(null);
   const [shares, setShares] = useState<BoardShare[]>([]);
-  const renderCount = useRef(0);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [fillColor, setFillColor] = useState("#fff085");
@@ -82,10 +81,6 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const boardStateRef = useRef<BoardState>({ type: "IDLE" });
-
-  useEffect(() => {
-    renderCount.current += 1;
-  });
 
   useEffect(() => {
     (async () => {
@@ -393,9 +388,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
             >
               Dashboard
             </Button>
-            <h1 className="text-2xl font-bold text-blue-800">
-              {board.name} (renders: {renderCount.current})
-            </h1>
+            <h1 className="text-2xl font-bold text-blue-800">{board.name}</h1>
           </div>
           {(board.permission === "owner" || board.permission === "editor") && (
             <div className="flex items-center gap-2 pointer-events-auto">
