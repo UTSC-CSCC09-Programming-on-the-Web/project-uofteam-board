@@ -149,7 +149,7 @@ sharesSubRouter.post("/update", checkAuth, async (req, res) => {
       await boardShare.destroy();
       saved.permission = update.permission;
     } else {
-      // TODO: find a better way to assert type at runtime
+      // TODO: find a way to assert type at runtime
       boardShare.permission = update.permission as BoardPermission;
       await boardShare.save();
       saved = boardShare.get({ plain: true });
@@ -161,7 +161,7 @@ sharesSubRouter.post("/update", checkAuth, async (req, res) => {
         name: saved.User.name,
         email: saved.User.email,
       },
-      boardID: saved.id,
+      boardID: saved.boardId,
       permission: saved.permission,
     } satisfies BoardShare);
   }
