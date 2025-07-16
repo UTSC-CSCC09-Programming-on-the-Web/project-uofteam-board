@@ -23,7 +23,7 @@ export default function Home() {
           enhance artwork together.
         </p>
         <Button
-          icon={<AiFillGoogleCircle size="1.3em" />}
+          icon={<AiFillGoogleCircle />}
           onClick={() => (window.location.href = API.getLoginRedirectUrl())}
           className="mt-10"
         >

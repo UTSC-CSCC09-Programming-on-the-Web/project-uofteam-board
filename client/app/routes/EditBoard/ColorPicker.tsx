@@ -12,7 +12,7 @@ function ColorPicker({ value, onChange }: ColorPickerProps) {
       type="color"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={clsx("w-10 h-10 border-2 border-gray-600 rounded-xl cursor-pointer", styles.input)}
+      className={clsx("w-10 h-10 border-2 border-gray-600 cursor-pointer", styles.input)}
     />
   );
 }

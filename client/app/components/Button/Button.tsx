@@ -60,8 +60,10 @@ function Button({
       )}
       {...rest}
     >
-      {loading && <Spinner className="size-[1em] border-[.15em]" />}
-      {!loading && icon}
+      {loading && <Spinner className="size-[1.3em] border-[.15em]" />}
+      {!loading &&
+        React.isValidElement<{ className?: string }>(icon) &&
+        React.cloneElement(icon, { className: clsx(icon.props.className, "size-[1.3em]") })}
       {children}
     </button>
   );

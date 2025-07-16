@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { MdArrowBack, MdDelete, MdHelpOutline, MdSettings } from "react-icons/md";
 import { Stage, Layer, Rect, Path as KonvaPath, Transformer } from "react-konva";
-import { RiPenNibLine, RiOpenaiFill } from "react-icons/ri";
 import { PiRectangleDashedDuotone } from "react-icons/pi";
+import { FaWandMagicSparkles } from "react-icons/fa6";
+import { RiPenNibLine } from "react-icons/ri";
 import colors from "tailwindcss/colors";
 import { v4 as uuid } from "uuid";
 import Konva from "konva";
@@ -18,7 +19,6 @@ import { API } from "~/services";
 import { useSpacePressed } from "./useSpacePressed";
 import { GenFillDialog, type GenFillDialogState } from "./GenFillDialog";
 import { ColorPicker } from "./ColorPicker";
-import { ToolButton } from "./ToolButton";
 import { HelpDialog } from "./HelpDialog";
 import { SettingsDialog } from "./SettingsDialog";
 import { computeBoundingBox } from "./utils";
@@ -392,56 +392,49 @@ export default function EditBoard({ params }: Route.ComponentProps) {
             <div className="flex items-center gap-2 pointer-events-auto">
               {selectedIDs.length > 0 ? (
                 <>
-                  <ToolButton
-                    selected
-                    color="danger"
-                    label="Delete"
+                  <Button
+                    size="sm"
+                    title="Delete"
+                    variant="danger"
                     icon={<MdDelete />}
+                    className="!w-10 !px-0"
                     onClick={() => {
                       setPaths((prev) => prev.filter((path) => !selectedIDs.includes(path.id)));
                       API.emitBoardUpdate(params.bid, { type: "DELETE_PATHS", ids: selectedIDs });
                       setSelectedIDs([]);
                     }}
                   />
-                  <ToolButton
-                    selected={false}
-                    label="Generative Fill"
-                    icon={<RiOpenaiFill />}
+                  <Button
+                    size="sm"
+                    icon={<FaWandMagicSparkles />}
                     onClick={() => {
                       const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
                       setGenFillState({ boardID: params.bid, paths: selectedPaths });
                       setSelectedIDs([]);
                     }}
-                  />
+                  >
+                    Generative Fill
+                  </Button>
                 </>
               ) : (
                 <>
-                  <ToolButton
-                    label="Pen Tool"
-                    selected={tool === "PEN"}
+                  <Button
+                    size="sm"
+                    title="Pen tool"
+                    variant={tool === "PEN" ? "primary" : "neutral"}
                     onClick={() => setTool("PEN")}
                     icon={<RiPenNibLine />}
+                    className="!w-10 !px-0"
                   />
-                  <ToolButton
-                    label="Selection Tool"
-                    selected={tool === "SELECTION"}
+                  <Button
+                    size="sm"
+                    title="Selection tool"
+                    variant={tool === "SELECTION" ? "primary" : "neutral"}
                     onClick={() => setTool("SELECTION")}
                     icon={<PiRectangleDashedDuotone />}
+                    className="!w-10 !px-0"
                   />
-                  {/* <ToolButton
-              label="Line Tool"
-              selected={tool === "PEN"}
-              onClick={() => setTool("PEN")}
-              icon={<TbLine />}
-            /> */}
-                  {/* <ToolButton
-              label="Circle Tool"
-              selected={tool === "PEN"}
-              onClick={() => setTool("PEN")}
-              icon={<MdOutlineCircle />}
-            /> */}
                   <ColorPicker value={strokeColor} onChange={setStrokeColor} />
-                  {/* <ColorPicker value={fillColor} onChange={setFillColor} /> */}
                 </>
               )}
             </div>
@@ -450,10 +443,22 @@ export default function EditBoard({ params }: Route.ComponentProps) {
       </div>
       <div className="fixed bottom-0 left-0 right-0 z-10 p-4 flex justify-between pointer-events-none">
         <div className="flex gap-2 pointer-events-auto">
-          <Button size="sm" onClick={handleZoomIn} variant="neutral">
+          <Button
+            size="sm"
+            title="Zoom in"
+            onClick={handleZoomIn}
+            variant="neutral"
+            className="!w-10"
+          >
             +
           </Button>
-          <Button size="sm" onClick={handleZoomOut} variant="neutral">
+          <Button
+            size="sm"
+            title="Zoom out"
+            onClick={handleZoomOut}
+            variant="neutral"
+            className="!w-10"
+          >
             -
           </Button>
         </div>
@@ -461,7 +466,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
           <Button
             size="sm"
             onClick={() => setHelpDialogOpen(true)}
-            icon={<MdHelpOutline size="1.3em" />}
+            icon={<MdHelpOutline />}
             variant="neutral"
           >
             Help
@@ -470,7 +475,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
             <Button
               size="sm"
               onClick={() => setSettingsDialogOpen(true)}
-              icon={<MdSettings size="1.3em" />}
+              icon={<MdSettings />}
               variant="neutral"
             >
               Settings
