@@ -17,7 +17,7 @@ if (!process.env.SECRET_KEY) {
 const corsConfig = {
   origin: process.env.CLIENT_URL || "http://localhost:5173",
   credentials: true,
-}
+};
 
 const app = express();
 app.use(express.json());
@@ -31,7 +31,7 @@ const sessionMiddleware = session({
   secret: process.env.SECRET_KEY || "default_secret_key",
   resave: false,
   saveUninitialized: true,
-})
+});
 app.use(sessionMiddleware);
 
 // Create websocket endpoint
@@ -46,7 +46,6 @@ const io = new Server(server, {
 // });
 io.engine.use(sessionMiddleware);
 registerWebSocket(io);
-
 
 try {
   await sequelize.authenticate();

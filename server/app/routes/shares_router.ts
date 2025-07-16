@@ -4,20 +4,19 @@ import type { BoardPermission, BoardShare } from "#types/api.ts";
 import { checkAuth } from "#middleware/checkAuth.ts";
 import { BoardShares } from "#models/BoardShares.ts";
 import { Users } from "#models/Users.ts";
-import { BoardShareUpdate } from '#types/api.ts';
-
+import { BoardShareUpdate } from "#types/api.ts";
 
 export const sharesSubRouter = express.Router({ mergeParams: true });
 
 sharesSubRouter.get("/", checkAuth, async (req, res) => {
-  const ALLOWED: BoardPermission[] = ['owner', 'editor', 'viewer'];
+  const ALLOWED: BoardPermission[] = ["owner", "editor", "viewer"];
   const { id } = req.params;
 
   const boardShareArr = await BoardShares.findAll({
     where: { boardId: id },
     include: {
-      model: Users
-    }
+      model: Users,
+    },
   });
   if (!boardShareArr) {
     res.status(404).json({ error: "Board not found" });
@@ -26,10 +25,7 @@ sharesSubRouter.get("/", checkAuth, async (req, res) => {
 
   let haveAccess = false;
   for (const share of boardShareArr) {
-    if (
-      share.userId === req.session.user?.id &&
-      ALLOWED.includes(share.permission)
-    ) {
+    if (share.userId === req.session.user?.id && ALLOWED.includes(share.permission)) {
       haveAccess = true;
       break;
     }
@@ -41,22 +37,22 @@ sharesSubRouter.get("/", checkAuth, async (req, res) => {
 
   res.json(
     boardShareArr
-    .filter((share) => share.permission !== 'owner')
-    .map((s) => s.get({ plain: true }))
-    .map((s) => ({
-      user: {
-        id: s.User.userId,
-        name: s.User.name,
-        email: s.User.email,
-      },
-      boardID: s.boardId,
-      permission: s.permission,
-    })) satisfies BoardShare[]
+      .filter((share) => share.permission !== "owner")
+      .map((s) => s.get({ plain: true }))
+      .map((s) => ({
+        user: {
+          id: s.User.userId,
+          name: s.User.name,
+          email: s.User.email,
+        },
+        boardID: s.boardId,
+        permission: s.permission,
+      })) satisfies BoardShare[],
   );
 });
 
 sharesSubRouter.post("/", checkAuth, async (req, res) => {
-  const ALLOWED: BoardPermission[] = ['owner', 'editor'];
+  const ALLOWED: BoardPermission[] = ["owner", "editor"];
   const { userEmail } = req.body;
   const { id } = req.params;
 
@@ -68,12 +64,14 @@ sharesSubRouter.post("/", checkAuth, async (req, res) => {
     res.status(400).json({ error: "Missing parameter userEmail from the request" });
     return;
   }
-  const curBoardShare = await BoardShares.findOne({ where: { boardId: id, userId: req.session.user?.id } });
+  const curBoardShare = await BoardShares.findOne({
+    where: { boardId: id, userId: req.session.user?.id },
+  });
   if (!curBoardShare || !ALLOWED.includes(curBoardShare.permission)) {
     res.status(403).json({ error: "You do not the authority to make this change" });
     return;
   }
-  const user = await Users.findOne({ where: { email: userEmail }});
+  const user = await Users.findOne({ where: { email: userEmail } });
   if (!user) {
     res.status(422).json({ error: "The specified user does not exist!" });
     return;
@@ -90,11 +88,11 @@ sharesSubRouter.post("/", checkAuth, async (req, res) => {
     return;
   }
 
-  const startingPermission: Exclude<BoardPermission, "owner"> = 'viewer'
+  const startingPermission: Exclude<BoardPermission, "owner"> = "viewer";
   const newShare = await BoardShares.create({
     boardId: id,
     userId: user.userId,
-    permission: startingPermission satisfies BoardPermission
+    permission: startingPermission satisfies BoardPermission,
   });
 
   res.json({
@@ -109,7 +107,7 @@ sharesSubRouter.post("/", checkAuth, async (req, res) => {
 });
 
 sharesSubRouter.post("/update", checkAuth, async (req, res) => {
-  const ALLOWED: BoardPermission[] = ['owner', 'editor'];
+  const ALLOWED: BoardPermission[] = ["owner", "editor"];
   const updates: BoardShareUpdate[] = req.body;
   const { id } = req.params;
 
@@ -122,7 +120,7 @@ sharesSubRouter.post("/update", checkAuth, async (req, res) => {
     where: {
       boardId: id,
       userId: req.session.user?.id,
-    }
+    },
   });
   if (!permCheck || !ALLOWED.includes(permCheck.permission)) {
     res.status(403).json({ error: "You do not have the authority to make this change" });
@@ -135,15 +133,15 @@ sharesSubRouter.post("/update", checkAuth, async (req, res) => {
     const boardShare = await BoardShares.findOne({
       where: {
         boardId: id,
-        userId: update.user.id
+        userId: update.user.id,
       },
       include: {
         model: Users,
-      }
+      },
     });
     if (!boardShare) continue;
 
-    if (update.permission === 'remove') {
+    if (update.permission === "remove") {
       await boardShare.destroy();
       continue;
     }
@@ -166,4 +164,3 @@ sharesSubRouter.post("/update", checkAuth, async (req, res) => {
 
   res.json(completed satisfies BoardShareUpdate[]);
 });
-

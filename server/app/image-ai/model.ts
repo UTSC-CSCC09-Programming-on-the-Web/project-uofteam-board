@@ -2,8 +2,7 @@ import { GenerateContentParameters, GoogleGenAI, Modality } from "@google/genai"
 import * as fs from "node:fs";
 
 const RETRY_COUNT = 3;
-const systemPrompt = 
-`### **System Prompt: Master Sketch Finalizer**
+const systemPrompt = `### **System Prompt: Master Sketch Finalizer**
 
 **Persona**
 
@@ -49,11 +48,15 @@ Violation of these laws constitutes a complete failure. They are non-negotiable.
     You must honor the original color palette. You are **forbidden** from introducing any new colors, shades, or tints. Every single stroke in the final output must be a color that was present in the original input image.
 
 *   **LAW 4: PERFECT STYLE MIMICRY.**
-    The new strokes you add must perfectly match the stroke style (thickness, texture, pressure, hand-drawn quality) of the original lines. The final piece must look as if it were drawn by a single artist in a single session.`
+    The new strokes you add must perfectly match the stroke style (thickness, texture, pressure, hand-drawn quality) of the original lines. The final piece must look as if it were drawn by a single artist in a single session.`;
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const aiRetryExponential = async (config: GenerateContentParameters, retries = RETRY_COUNT, delay = 1000) => {
+const aiRetryExponential = async (
+  config: GenerateContentParameters,
+  retries = RETRY_COUNT,
+  delay = 1000,
+) => {
   for (let i = 0; i < retries; i++) {
     try {
       return await ai.models.generateContent(config);
@@ -62,11 +65,11 @@ const aiRetryExponential = async (config: GenerateContentParameters, retries = R
         throw error; // Rethrow the error if all retries fail
       }
       console.warn(`AI model attempt ${i + 1} failed: ${error}. Retrying in ${delay}ms...`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
       delay *= 2; // Exponential backoff
     }
   }
-}
+};
 
 export async function main(base64Image: string) {
   console.log("Starting AI content generation...");
@@ -76,8 +79,8 @@ export async function main(base64Image: string) {
     contents: [
       {
         inlineData: {
-        mimeType: "image/png",
-        data: base64Image,
+          mimeType: "image/png",
+          data: base64Image,
         },
       },
       { text: systemPrompt },
@@ -87,18 +90,19 @@ export async function main(base64Image: string) {
       temperature: 0.7, // 0.0 to 1.0, the smaller it is the less creative the output
     },
   } satisfies GenerateContentParameters);
-  
+
   if (!response || !response.candidates || response.candidates.length === 0) {
     throw new Error("No candidates returned from AI model.");
   }
-  
+
   const candidate = response.candidates[0];
   if (!candidate || !candidate.content || !candidate.content.parts) {
     throw new Error("No content found in AI response.");
   }
-  
+
   for (const part of candidate.content.parts) {
-    if (!part.inlineData) { // Not the image part
+    if (!part.inlineData) {
+      // Not the image part
       continue;
     }
     const imageData = part.inlineData.data;
@@ -113,6 +117,6 @@ export async function main(base64Image: string) {
       return imageData; // Return the base64 image data
     }
   }
-  
+
   throw new Error("No image data found in AI response");
 }

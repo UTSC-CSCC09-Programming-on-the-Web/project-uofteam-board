@@ -8,7 +8,6 @@ import { main as aiModel } from "#image-ai/model.ts";
 import { vectorizeBase64 } from "#image-ai/vectorize.ts";
 import { BoardShares } from "#models/BoardShares.ts";
 
-
 export const boardsRouter = express.Router();
 
 boardsRouter.post("/", checkAuth, async (req, res) => {
@@ -26,9 +25,9 @@ boardsRouter.post("/", checkAuth, async (req, res) => {
   const newBoardShare = await BoardShares.create({
     boardId: newBoard.boardId,
     userId: req.session.user?.id,
-    permission: "owner"
+    permission: "owner",
   });
-  
+
   res.status(201).json({
     id: newBoard.boardId,
     name: newBoard.name,
@@ -45,7 +44,7 @@ boardsRouter.get("/", checkAuth, async (req, res) => {
 
   const { count: totalItems, rows } = await BoardShares.findAndCountAll({
     where: {
-      userId: req.session.user?.id
+      userId: req.session.user?.id,
     },
     include: {
       model: Boards,
@@ -53,15 +52,13 @@ boardsRouter.get("/", checkAuth, async (req, res) => {
         where: {
           name: {
             [Op.iLike]: `%${query}%`, // Case insensitive search
-          }
-        }
-      })
+          },
+        },
+      }),
     },
     offset: (page - 1) * limit,
     limit,
-    order: [
-      [Boards, 'createdAt', 'DESC']
-    ],
+    order: [[Boards, "createdAt", "DESC"]],
   });
 
   const totalPages = Math.ceil(totalItems / limit) || 1;
@@ -95,7 +92,7 @@ boardsRouter.get("/:id", checkAuth, async (req, res) => {
     },
     include: {
       model: Boards,
-    }
+    },
   });
   if (!board) {
     res.status(404).json({ error: "Board not found" });
@@ -113,7 +110,7 @@ boardsRouter.get("/:id", checkAuth, async (req, res) => {
 });
 
 boardsRouter.patch("/:id", checkAuth, async (req, res) => {
-  const ALLOWED: BoardPermission[] = ['owner', 'editor'];
+  const ALLOWED: BoardPermission[] = ["owner", "editor"];
   const { name } = req.body;
   const { id } = req.params;
   if (!name) {
@@ -151,7 +148,7 @@ boardsRouter.patch("/:id", checkAuth, async (req, res) => {
 });
 
 boardsRouter.delete("/:id", checkAuth, async (req, res) => {
-  const ALLOWED: BoardPermission[] = ['owner'];
+  const ALLOWED: BoardPermission[] = ["owner"];
   const { id } = req.params;
 
   const boardShare = await BoardShares.findOne({
@@ -197,7 +194,7 @@ boardsRouter.post("/:id/generative-fill", checkAuth, async (req, res) => {
   try {
     const imgBase64 = await render(Number(id), pathIDs);
     const newImgBase64 = await aiModel(imgBase64);
-    const paths = await vectorizeBase64(newImgBase64)
+    const paths = await vectorizeBase64(newImgBase64);
     res.json(paths satisfies Path[]);
   } catch (err) {
     res.status(500).json({ error: "Failed to create new image" });

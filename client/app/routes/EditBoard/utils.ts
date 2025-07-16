@@ -51,4 +51,4 @@ export const computeTransformCentered = (from: BoundingBox, to: BoundingBox): Tr
   const dx = to.x + (to.width - from.width * scale) / 2 - from.x * scale;
   const dy = to.y + (to.height - from.height * scale) / 2 - from.y * scale;
   return { scale, dx, dy };
-}
+};

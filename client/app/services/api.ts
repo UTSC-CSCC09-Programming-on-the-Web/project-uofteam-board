@@ -138,11 +138,11 @@ class ApiService {
   private post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<Response<T>> {
     return this.request<T>({ ...config, method: "post", url, data });
   }
-  
+
   private delete<T>(url: string, config?: AxiosRequestConfig): Promise<Response<T>> {
     return this.request<T>({ ...config, method: "delete", url });
   }
-  
+
   private patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<Response<T>> {
     return this.request<T>({ ...config, method: "patch", url, data });
   }

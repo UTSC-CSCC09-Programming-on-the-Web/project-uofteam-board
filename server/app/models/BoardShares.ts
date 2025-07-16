@@ -23,7 +23,7 @@ BoardShares.init(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'Boards',
+        model: "Boards",
         key: "boardId",
       },
     },
@@ -38,7 +38,7 @@ BoardShares.init(
     permission: {
       type: DataTypes.STRING,
       allowNull: false,
-    }
+    },
   },
   {
     sequelize,
@@ -47,9 +47,9 @@ BoardShares.init(
     indexes: [
       {
         unique: true,
-        fields: ['boardId', 'userId']
-      }
-    ]
+        fields: ["boardId", "userId"],
+      },
+    ],
   },
 );
 

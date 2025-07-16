@@ -116,55 +116,52 @@ export default function EditBoard({ params }: Route.ComponentProps) {
     }
   }, [selectedIDs]);
 
-  useEffect(
-    () => {
-      return API.listenForBoardUpdates(
-        params.bid,
-        (update) => {
-          console.log("Received board update:", update);
-          switch (update.type) {
-            case "CREATE_OR_REPLACE_PATHS":
-              setPaths((prevPaths) => {
-                const prevPathsCopy = [...prevPaths];
-                update.paths.forEach((newPath) => {
-                  const existingIndex = prevPathsCopy.findIndex((p) => p.id === newPath.id);
-                  if (existingIndex === -1) {
-                    prevPathsCopy.push(newPath);
-                    return;
-                  }
+  useEffect(() => {
+    return API.listenForBoardUpdates(
+      params.bid,
+      (update) => {
+        console.log("Received board update:", update);
+        switch (update.type) {
+          case "CREATE_OR_REPLACE_PATHS":
+            setPaths((prevPaths) => {
+              const prevPathsCopy = [...prevPaths];
+              update.paths.forEach((newPath) => {
+                const existingIndex = prevPathsCopy.findIndex((p) => p.id === newPath.id);
+                if (existingIndex === -1) {
+                  prevPathsCopy.push(newPath);
+                  return;
+                }
 
-                  const existingPath = prevPathsCopy[existingIndex];
-                  if (existingPath.fromLocal) {
-                    // If the existing path was created from local, we make sure to
-                    // delete it and add the new path to the end of the list. This ensures
-                    // that the paths for different clients appear in the exact same order.
-                    prevPathsCopy.splice(existingIndex, 1);
-                    prevPathsCopy.push(newPath);
-                  } else {
-                    prevPathsCopy[existingIndex] = newPath;
-                  }
-                });
-                return prevPathsCopy;
+                const existingPath = prevPathsCopy[existingIndex];
+                if (existingPath.fromLocal) {
+                  // If the existing path was created from local, we make sure to
+                  // delete it and add the new path to the end of the list. This ensures
+                  // that the paths for different clients appear in the exact same order.
+                  prevPathsCopy.splice(existingIndex, 1);
+                  prevPathsCopy.push(newPath);
+                } else {
+                  prevPathsCopy[existingIndex] = newPath;
+                }
               });
-              break;
-            case "DELETE_PATHS":
-              setPaths((prevPaths) => prevPaths.filter((path) => !update.ids.includes(path.id)));
-              break;
-            default:
-              [update] satisfies [never];
-              break;
-          }
-        },
-        (error) => {
-          alert(`Error in board updates: ${error.message}`);
-        },
-        (reason) => {
-          console.warn(`Socket closed: ${reason}`);
-        },
-      )
-    },
-    [params.bid],
-  );
+              return prevPathsCopy;
+            });
+            break;
+          case "DELETE_PATHS":
+            setPaths((prevPaths) => prevPaths.filter((path) => !update.ids.includes(path.id)));
+            break;
+          default:
+            [update] satisfies [never];
+            break;
+        }
+      },
+      (error) => {
+        alert(`Error in board updates: ${error.message}`);
+      },
+      (reason) => {
+        console.warn(`Socket closed: ${reason}`);
+      },
+    );
+  }, [params.bid]);
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (spacePressed) return;

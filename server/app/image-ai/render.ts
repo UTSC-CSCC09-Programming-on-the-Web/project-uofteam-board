@@ -12,24 +12,30 @@ export const renderPaths = (paths: Path[]): string => {
   const layer = new Konva.Layer();
 
   // White background
-  stage.add(new Konva.Layer().add(new Konva.Rect({
-    x: 0,
-    y: 0,
-    width: SIZE,
-    height: SIZE,
-    fill: 'white',
-  })));
+  stage.add(
+    new Konva.Layer().add(
+      new Konva.Rect({
+        x: 0,
+        y: 0,
+        width: SIZE,
+        height: SIZE,
+        fill: "white",
+      }),
+    ),
+  );
   stage.add(layer);
 
   paths.forEach((path) => {
-    layer.add(new Konva.Path({
-      ...path,
-      data: path.d,
-      stroke: path.strokeColor,
-      fill: path.fillColor,
-      strokeWidth: path.strokeWidth
-    }));
-  })
+    layer.add(
+      new Konva.Path({
+        ...path,
+        data: path.d,
+        stroke: path.strokeColor,
+        fill: path.fillColor,
+        strokeWidth: path.strokeWidth,
+      }),
+    );
+  });
 
   const box = KonvaUtil.computeBoundingBox(paths);
   const windowBox = {
@@ -44,17 +50,20 @@ export const renderPaths = (paths: Path[]): string => {
   layer.x(layer.x() + transform.dx);
   layer.y(layer.y() + transform.dy);
 
-  const base64 = stage.toDataURL({
-    mimeType: 'image/png',
-    pixelRatio: 1,
-  }).split(';base64,').pop();
+  const base64 = stage
+    .toDataURL({
+      mimeType: "image/png",
+      pixelRatio: 1,
+    })
+    .split(";base64,")
+    .pop();
 
   if (!base64) {
     throw Error(`Could not render paths to base64 image. Paths:${paths}`);
   }
 
   return base64;
-}
+};
 
 export async function render(boardId: number, ids: string[]): Promise<string> {
   const strokes = await Strokes.findAll({ where: { strokeId: ids, boardId } });
@@ -69,8 +78,8 @@ export async function render(boardId: number, ids: string[]): Promise<string> {
     scaleX: stroke.scaleX,
     scaleY: stroke.scaleY,
     rotation: stroke.rotation,
-  })) satisfies Path[]
-  
+  })) satisfies Path[];
+
   const base64Image = await renderPaths(paths);
   if (!base64Image) {
     throw new Error("Failed to extract base64 image data");
@@ -78,8 +87,8 @@ export async function render(boardId: number, ids: string[]): Promise<string> {
 
   if (process.env.SAVE_IMAGES_DEBUG_ENABLED === "1") {
     const filename = `${Date.now()}_img.png`;
-    fs.writeFile(`./app/image-ai/dump/${filename}`, base64Image, {encoding: 'base64'}, () => {
-      console.log('File created');
+    fs.writeFile(`./app/image-ai/dump/${filename}`, base64Image, { encoding: "base64" }, () => {
+      console.log("File created");
     });
   }
 
