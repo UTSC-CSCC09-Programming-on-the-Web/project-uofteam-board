@@ -164,7 +164,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   }, [params.bid]);
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (spacePressed) return;
+    if (spacePressed || board === null || board.permission === "viewer") return;
     const stage = e.target.getStage();
     if (!stage) return;
 
