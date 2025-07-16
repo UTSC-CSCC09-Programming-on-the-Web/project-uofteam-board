@@ -10,9 +10,16 @@
 
     "rootDir": "./app",
     "outDir": "./build",
-    "noEmit": true,
-    "allowImportingTsExtensions": true
+    "noEmit": false,
+    "baseUrl": ".",
+    "paths": {
+      "#*": ["./app/*"]
+    }
+  },
+  "tsc-alias": {
+    "verbose": true, // Enable verbose logging to see what it's doing
+    "resolveFullPaths": true // Often useful for ESM
   },
   "include": ["app/**/*.ts", "app/image-ai/model.ts"],
-  "exclude": ["dist"]
+  "exclude": ["node_modules", "build"]
 }

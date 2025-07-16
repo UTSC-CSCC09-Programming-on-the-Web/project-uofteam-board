@@ -1,6 +1,6 @@
 import Konva from "konva";
-import { Strokes } from "#models/Strokes.ts";
-import type { Path } from "#types/api.ts";
+import { Strokes } from "#models/Strokes.js";
+import type { Path } from "#types/api.js";
 import * as KonvaUtil from "./utils";
 import fs from "fs";
 

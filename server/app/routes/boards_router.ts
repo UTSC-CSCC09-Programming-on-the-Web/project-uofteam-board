@@ -1,12 +1,12 @@
 import express from "express";
 import { Op } from "sequelize";
-import { Boards } from "#models/Boards.ts";
-import type { Board, BoardPermission, Paginated, Path } from "#types/api.ts";
-import { checkAuth } from "#middleware/checkAuth.ts";
-import { render } from "#image-ai/render.ts";
-import { main as aiModel } from "#image-ai/model.ts";
-import { vectorizeBase64 } from "#image-ai/vectorize.ts";
-import { BoardShares } from "#models/BoardShares.ts";
+import { Boards } from "#models/Boards.js";
+import type { Board, BoardPermission, Paginated, Path } from "#types/api.js";
+import { checkAuth } from "#middleware/checkAuth.js";
+import { render } from "#image-ai/render.js";
+import { main as aiModel } from "#image-ai/model.js";
+import { vectorizeBase64 } from "#image-ai/vectorize.js";
+import { BoardShares } from "#models/BoardShares.js";
 
 export const boardsRouter = express.Router();
 
