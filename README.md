@@ -5,6 +5,7 @@
 Start PostgreSQL server first
 
 ./server/.env
+
 ```Bash
 PORT="3000"
 SECRET_KEY="<secret-key>"
@@ -22,11 +23,10 @@ DB_PORT="5432"
 
 ## Team members
 
-| Email                           | utorid   |
-| ------------------------------- | -------- |
-| j.daniel@mail.utoronto.ca       | danie158 |
-| petrus.pranoto@mail.utoronto.ca | pranotop |
-| rameen.popal@mail.utoronto.ca   | popalram |
+| Email                         | utorid   |
+| ----------------------------- | -------- |
+| j.daniel@mail.utoronto.ca     | danie158 |
+| rameen.popal@mail.utoronto.ca | popalram |
 
 ## Brief description of the web application
 
