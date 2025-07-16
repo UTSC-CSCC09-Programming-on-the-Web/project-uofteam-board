@@ -61,7 +61,9 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   const [shares, setShares] = useState<BoardShare[]>([]);
   const renderCount = useRef(0);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [fillColor, setFillColor] = useState("#fff085");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [strokeWidth, setStrokeWidth] = useState(4);
   const [strokeColor, setStrokeColor] = useState("#193cb8");
   const [genFillState, setGenFillState] = useState<GenFillDialogState | null>(null);

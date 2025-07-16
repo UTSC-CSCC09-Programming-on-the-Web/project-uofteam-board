@@ -6,6 +6,7 @@ interface DialogProps extends React.HTMLAttributes<HTMLDivElement> {
   onClose: () => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function Dialog({ open, onClose, children, className, ...rest }: DialogProps) {
   if (!open) return null;
 
