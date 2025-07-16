@@ -143,17 +143,15 @@ sharesSubRouter.post("/update", checkAuth, async (req, res) => {
     });
     if (!boardShare) continue;
 
-    let saved;
     if (update.permission === 'remove') {
-      saved = boardShare.get({ plain: true });
       await boardShare.destroy();
-      saved.permission = update.permission;
-    } else {
-      // TODO: find a way to assert type at runtime
-      boardShare.permission = update.permission as BoardPermission;
-      await boardShare.save();
-      saved = boardShare.get({ plain: true });
+      continue;
     }
+
+    // TODO: find a way to assert type at runtime
+    boardShare.permission = update.permission as BoardPermission;
+    await boardShare.save();
+    const saved = boardShare.get({ plain: true });
 
     completed.push({
       user: {
