@@ -22,6 +22,7 @@ import { ToolButton } from "./ToolButton";
 import { HelpDialog } from "./HelpDialog";
 import { SettingsDialog } from "./SettingsDialog";
 import { computeBoundingBox } from "./utils";
+import { useWindowSize } from "./useWindowSize";
 
 export function meta() {
   return [{ title: "Edit Board" }];
@@ -73,9 +74,8 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   const pathRefs = useRef<Map<string, Konva.Path>>(new Map());
   const transformerRef = useRef<Konva.Transformer>(null);
 
-  const width = window.innerWidth;
-  const height = window.innerHeight;
   const stageRef = useRef<Konva.Stage>(null);
+  const [windowWidth, windowHeight] = useWindowSize();
   const [paths, setPaths] = useState<PathWithLocal[]>([]);
 
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
@@ -479,8 +479,8 @@ export default function EditBoard({ params }: Route.ComponentProps) {
         </div>
       </div>
       <Stage
-        width={width}
-        height={height}
+        width={windowWidth}
+        height={windowHeight}
         ref={stageRef}
         // onDragEnd={(e) => {
         //   const stage = e.target.getStage();
