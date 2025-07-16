@@ -98,7 +98,11 @@ sharesSubRouter.post("/", checkAuth, async (req, res) => {
   });
 
   res.json({
-    user: user.get({ plain: true }),
+    user: {
+      id: user.userId,
+      name: user.name,
+      email: user.email,
+    },
     boardID: newShare.boardId,
     permission: startingPermission,
   } satisfies BoardShare);
@@ -132,21 +136,34 @@ sharesSubRouter.post("/update", checkAuth, async (req, res) => {
       where: {
         boardId: id,
         userId: update.user.id
+      },
+      include: {
+        model: Users,
       }
     });
     if (!boardShare) continue;
 
+    let saved;
     if (update.permission === 'remove') {
-      const saved = boardShare.get({ plain: true });
+      saved = boardShare.get({ plain: true });
       await boardShare.destroy();
       saved.permission = update.permission;
-      completed.push(saved);
     } else {
-      // TODO: find a better way to assert type
+      // TODO: find a better way to assert type at runtime
       boardShare.permission = update.permission as BoardPermission;
       await boardShare.save();
-      completed.push(boardShare.get({ plain: true }));
+      saved = boardShare.get({ plain: true });
     }
+
+    completed.push({
+      user: {
+        id: saved.User.userId,
+        name: saved.User.name,
+        email: saved.User.email,
+      },
+      boardID: saved.id,
+      permission: saved.permission,
+    } satisfies BoardShare);
   }
 
   res.json(completed satisfies BoardShareUpdate[]);
