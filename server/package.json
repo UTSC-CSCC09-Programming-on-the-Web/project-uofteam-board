@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx --watch --env-file=.env ./app/index.ts",
-    "start": "node --env-file=.env ./build/index.js",
+    "start": "tsx --env-file=.env ./app/index.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -13,14 +13,19 @@
     "format:fix": "prettier . --write"
   },
   "dependencies": {
+    "@google/genai": "^1.8.0",
+    "@neplex/vectorizer": "^0.0.5",
     "@sequelize/postgres": "^7.0.0-alpha.46",
+    "canvas": "^3.1.2",
     "cookie": "^1.0.2",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
+    "konva": "^9.3.22",
     "morgan": "^1.10.0",
     "query-string": "^9.2.1",
-    "sequelize": "^6.37.3"
+    "sequelize": "^6.37.3",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",
