@@ -5,7 +5,7 @@ import pluginReact from "eslint-plugin-react";
 import { defineConfig, globalIgnores } from "eslint/config";
 
 const config = defineConfig([
-  globalIgnores([".react-router/*"]),
+  globalIgnores([".react-router/*", "build/*"]),
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}"],
     extends: ["js/recommended"],
