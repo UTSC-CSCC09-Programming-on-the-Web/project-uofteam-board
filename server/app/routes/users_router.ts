@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { Users } from "#models/Users.ts";
-import type { User } from "#types/api.ts";
-import { checkAuth } from "#middleware/checkAuth.ts";
-import { getGoogleAuth, authParams, links } from "#oauth/googleoauth.ts";
+import { Users } from "#models/Users.js";
+import type { User } from "#types/api.js";
+import { checkAuth } from "#middleware/checkAuth.js";
+import { getGoogleAuth, authParams, links } from "#oauth/googleoauth.js";
 
 export const usersRouter = Router();
 

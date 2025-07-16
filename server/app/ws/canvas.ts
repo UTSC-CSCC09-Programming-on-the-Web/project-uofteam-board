@@ -1,8 +1,8 @@
 import { Server, Socket } from "socket.io";
 import express from "express";
-import { checkCanvasAuth } from "#middleware/checkAuth.ts";
-import { ClientBoardUpdate, Path, ServerBoardUpdate } from "#types/api.ts";
-import { Strokes } from "#models/Strokes.ts";
+import { checkCanvasAuth } from "#middleware/checkAuth.js";
+import { ClientBoardUpdate, Path, ServerBoardUpdate } from "#types/api.js";
+import { Strokes } from "#models/Strokes.js";
 import util from "util";
 
 const onUpdate = async (

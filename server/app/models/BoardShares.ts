@@ -1,8 +1,8 @@
 import { Model, DataTypes } from "sequelize";
-import { sequelize } from "../datasource.ts";
-import { BoardPermission } from "#types/api.ts";
-import { Boards } from "./Boards.ts";
-import { Users } from "./Users.ts";
+import { sequelize } from "../datasource.js";
+import { BoardPermission } from "#types/api.js";
+import { Boards } from "./Boards.js";
+import { Users } from "./Users.js";
 
 export class BoardShares extends Model {
   declare shareId: number;

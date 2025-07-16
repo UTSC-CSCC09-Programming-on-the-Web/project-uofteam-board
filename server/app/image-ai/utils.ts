@@ -1,5 +1,5 @@
 import Konva from "konva";
-import type { Path } from "#types/api.ts";
+import type { Path } from "#types/api.js";
 
 export interface BoundingBox {
   x: number;

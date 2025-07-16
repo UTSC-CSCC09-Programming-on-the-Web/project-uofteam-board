@@ -1,14 +1,14 @@
 import express from "express";
-import { sequelize } from "./datasource.ts";
+import { sequelize } from "./datasource.js";
 import session from "express-session";
 import { logger } from "#middleware/logger.js";
-import { usersRouter } from "#routes/users_router.ts";
-import { boardsRouter } from "#routes/boards_router.ts";
-import { sharesSubRouter } from "#routes/shares_router.ts";
+import { usersRouter } from "#routes/users_router.js";
+import { boardsRouter } from "#routes/boards_router.js";
+import { sharesSubRouter } from "#routes/shares_router.js";
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
-import { registerWebSocket } from "#ws/canvas.ts";
+import { registerWebSocket } from "#ws/canvas.js";
 
 if (!process.env.SECRET_KEY) {
   console.warn("SECRET_KEY is not set. Using default secret key for session management.");

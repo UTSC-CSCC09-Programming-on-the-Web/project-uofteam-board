@@ -1,5 +1,5 @@
-import { BoardShares } from "#models/BoardShares.ts";
-import { BoardPermission, User } from "#types/api.ts";
+import { BoardShares } from "#models/BoardShares.js";
+import { BoardPermission, User } from "#types/api.js";
 import { Request, Response, NextFunction } from "express";
 
 export function checkAuth(req: Request, res: Response, next: NextFunction) {

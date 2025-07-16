@@ -1,4 +1,4 @@
-import { Path } from "#types/api.ts";
+import { Path } from "#types/api.js";
 import { vectorize, ColorMode, Hierarchical, PathSimplifyMode } from "@neplex/vectorizer";
 import fs from "fs";
 

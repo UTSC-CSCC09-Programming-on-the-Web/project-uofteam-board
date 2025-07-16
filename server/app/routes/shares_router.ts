@@ -1,10 +1,10 @@
 import express from "express";
-import { Boards } from "#models/Boards.ts";
-import type { BoardPermission, BoardShare } from "#types/api.ts";
-import { checkAuth } from "#middleware/checkAuth.ts";
-import { BoardShares } from "#models/BoardShares.ts";
-import { Users } from "#models/Users.ts";
-import { BoardShareUpdate } from "#types/api.ts";
+import { Boards } from "#models/Boards.js";
+import type { BoardPermission, BoardShare } from "#types/api.js";
+import { checkAuth } from "#middleware/checkAuth.js";
+import { BoardShares } from "#models/BoardShares.js";
+import { Users } from "#models/Users.js";
+import { BoardShareUpdate } from "#types/api.js";
 
 export const sharesSubRouter = express.Router({ mergeParams: true });
 
