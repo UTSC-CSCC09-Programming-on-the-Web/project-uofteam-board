@@ -324,16 +324,6 @@ export default function EditBoard({ params }: Route.ComponentProps) {
     });
   };
 
-  const handlePathClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (tool === "SELECTION") {
-      const node = e.target;
-      const currID = node.id();
-      setSelectedIDs((prev) =>
-        prev.includes(currID) ? prev.filter((id) => id !== currID) : [...prev, currID],
-      );
-    }
-  };
-
   const handlePathDragEnd = (e: Konva.KonvaEventObject<Event>) => {
     const node = e.target;
     const id = node.id();
@@ -530,13 +520,12 @@ export default function EditBoard({ params }: Route.ComponentProps) {
                   if (node) pathRefs.current.set(path.id, node);
                   else pathRefs.current.delete(path.id);
                 }}
-                onClick={handlePathClick}
                 onDragEnd={handlePathDragEnd}
                 onTransformEnd={handlePathTransformEnd}
               />
             );
           })}
-          <Transformer ref={transformerRef} />
+          <Transformer ref={transformerRef} shouldOverdrawWholeArea />
           {selectionRect && (
             <Rect
               x={Math.min(selectionRect.start.x, selectionRect.end.x)}
