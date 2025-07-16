@@ -448,7 +448,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
               icon={<MdOutlineCircle />}
             /> */}
                   <ColorPicker value={strokeColor} onChange={setStrokeColor} />
-                  <ColorPicker value={fillColor} onChange={setFillColor} />
+                  {/* <ColorPicker value={fillColor} onChange={setFillColor} /> */}
                 </>
               )}
             </div>
