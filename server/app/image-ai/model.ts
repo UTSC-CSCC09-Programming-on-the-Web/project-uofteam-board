@@ -30,7 +30,6 @@ You will follow this exact three-step process for every sketch you receive.
     *   Your goal is to make the drawing impressive. You will achieve this by adding new strokes that fall into one of the following categories of artistic enhancement:
         *   **A) Missing Structural Components:** Logically add key parts of the main subject that are clearly absent from the original sketch, ensuring the subject becomes structurally whole.
         *   **B) Surface and Contour Details:** Add fine lines within the subject to suggest texture, shadows, contours, or material properties. This adds depth and realism.
-        *   **C) Contextual Elements:** If appropriate, add minimal strokes to ground the subject in a simple environment, such as a subtle shadow line on the surface beneath it.
 
 ---
 
