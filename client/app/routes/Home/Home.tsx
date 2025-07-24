@@ -12,8 +12,9 @@ export default function Home() {
   const [query] = useSearchParams();
 
   return (
-    <div className="min-h-screen bg-yellow-50 flex items-center">
-      <div className="container mx-auto px-4 flex flex-col items-center text-center max-w-[768px]">
+    <div className="min-h-screen flex justify-center items-center bg-yellow-50">
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#eab30812_1px,transparent_1px),linear-gradient(to_bottom,#eab30812_1px,transparent_1px)] bg-[size:48px_48px]" />
+      <div className="z-10 px-4 flex flex-col items-center text-center max-w-3xl">
         <h1 className="text-3xl md:text-4xl text-blue-800 font-extrabold">
           <span className="underline underline-offset-6 decoration-blue-900">UofTeam Board</span>
           <PiPencilDuotone className="inline text-4xl md:text-5xl" />
