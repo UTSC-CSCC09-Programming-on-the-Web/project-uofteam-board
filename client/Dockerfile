@@ -6,7 +6,7 @@ RUN npm ci
 COPY . ./
 RUN npm run build
 
-FROM nginx:1.21.6-alpine
+FROM nginx:1.29.0-alpine
 COPY ./nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/build/client /usr/share/nginx/html
 EXPOSE 80
