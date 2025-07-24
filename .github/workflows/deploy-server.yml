@@ -8,7 +8,7 @@ on:
       - server/**
 
 env:
-  IMAGE_NAME: server-joshuajadaniel
+  IMAGE_NAME: uofteam-board-server
 
 jobs:
   push:

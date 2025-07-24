@@ -8,7 +8,7 @@ on:
       - client/**
 
 env:
-  IMAGE_NAME: client-joshuajadaniel
+  IMAGE_NAME: uofteam-board-client
 
 jobs:
   push:
