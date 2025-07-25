@@ -7,6 +7,7 @@ export const links = {
 };
 
 // https://clerk.com/blog/oauth2-react-user-authorization
+// https://developers.google.com/identity/protocols/oauth2/web-server
 const config = {
   authUrl: links.authUrl,
   tokenUrl: links.tokenUrl,

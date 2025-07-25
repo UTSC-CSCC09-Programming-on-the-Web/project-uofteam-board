@@ -33,8 +33,9 @@ usersRouter.get("/login/callback", async (req, res) => {
 });
 
 usersRouter.get("/login", async (req, res) => {
-  const redirectUrl = `${links.authUrl}?${authParams}`;
-  res.redirect(redirectUrl);
+  res.json({
+    url: `${links.authUrl}?${authParams}`
+  })
 });
 
 usersRouter.post("/logout", checkAuth, async (req, res) => {

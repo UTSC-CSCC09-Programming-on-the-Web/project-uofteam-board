@@ -16,8 +16,8 @@ class ApiService {
     });
   }
 
-  public getLoginRedirectUrl(): string {
-    return `${this.client.defaults.baseURL}/auth/login`;
+  public getLoginRedirectUrl(): Promise<Response<{url: string}>> {
+    return this.get("/auth/login");
   }
 
   public postLogout(): Promise<Response<User>> {

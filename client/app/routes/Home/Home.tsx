@@ -9,7 +9,7 @@ export function meta() {
 }
 
 export default function Home() {
-  const [query] = useSearchParams();
+  const [query, setQuery] = useSearchParams();
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-yellow-100">
@@ -26,7 +26,16 @@ export default function Home() {
         </p>
         <Button
           icon={<AiFillGoogleCircle />}
-          onClick={() => (window.location.href = API.getLoginRedirectUrl())}
+          onClick={() => {
+            API.getLoginRedirectUrl()
+              .then((res) => {
+                if (res.data?.url) window.location.href = res.data.url;
+                else throw new Error("Failed to retrieve Oauth login URL");
+              })
+              .catch(() => {
+                setQuery(new URLSearchParams({ error: "auth_failed" }));
+              })
+          }}
           className="mt-10"
         >
           Log in with Google
