@@ -24,7 +24,7 @@ export default function Home() {
           <span className={styles.underline}>UofTeam Board</span>
           <PiPencilDuotone className={clsx("inline text-4xl md:text-5xl", styles.logo)} />
         </h1>
-        <p className="mt-4 text-lg md:text-xl text-gray-600">
+        <p className="mt-6 text-lg md:text-xl text-gray-600">
           A real-time collaborative canvas with AI-powered drawing completion—create, share, and
           enhance artwork together.
         </p>
