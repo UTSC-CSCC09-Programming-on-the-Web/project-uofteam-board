@@ -12,8 +12,8 @@ import clsx from "clsx";
 import color from "color";
 
 import type { Route } from "./+types/EditBoard";
-import { Button, Spinner } from "~/components";
 import type { Board, BoardShare, Path } from "~/types";
+import { Button, Spinner } from "~/components";
 import { API } from "~/services";
 
 import { useSpacePressed } from "./useSpacePressed";
@@ -434,7 +434,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
                     icon={<PiRectangleDashedDuotone />}
                     className="!w-10 !px-0"
                   />
-                  <ColorPicker value={strokeColor} onChange={setStrokeColor} />
+                  <ColorPicker initialValue={strokeColor} onChange={setStrokeColor} />
                 </>
               )}
             </div>
