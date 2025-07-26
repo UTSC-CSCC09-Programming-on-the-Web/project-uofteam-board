@@ -50,7 +50,7 @@ function Button({
       onClick={onClick}
       disabled={isDisabled}
       className={clsx(
-        "inline-flex items-center justify-center gap-2 transition-all cursor-pointer font-semibold",
+        "inline-flex items-center justify-center gap-2 transition-all cursor-pointer font-semibold select-none",
         "border-2 rounded-tl-[255px_15px] rounded-tr-[15px_225px] rounded-br-[225px_15px] rounded-bl-[15px_255px]",
         "active:shadow-none active:translate-x-[3px] active:translate-y-[3px]",
         isDisabled ? variantDisabledClasses[variant] : variantClasses[variant],
