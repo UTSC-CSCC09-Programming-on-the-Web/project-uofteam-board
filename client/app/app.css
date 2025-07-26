@@ -4,6 +4,29 @@
   --font-sans:
     "Shantell Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
     "Segoe UI Symbol", "Noto Color Emoji";
+  --offset-shadow-md: 3px;
+  --offset-shadow-lg: 5px;
+  --rounded-organic-sm: 200px 15px 200px 15px / 15px 200px 15px 200px;
+  --rounded-organic-md: 50px 5px 50px 5px / 5px 50px 5px 50px;
+  --rounded-organic-lg: 25px 5px 25px 5px / 5px 25px 5px 25px;
+}
+
+@utility offset-shadow-* {
+  --offset: --value(--offset-shadow- *);
+  box-shadow: var(--offset) var(--offset) 0 var(--tw-shadow-color);
+}
+
+@utility clickable-offset-shadow-* {
+  --offset: --value(--offset-shadow- *);
+  box-shadow: var(--offset) var(--offset) 0 var(--tw-shadow-color);
+  &:active {
+    transform: translate(var(--offset), var(--offset));
+    box-shadow: none;
+  }
+}
+
+@utility rounded-organic-* {
+  border-radius: --value(--rounded-organic- *);
 }
 
 html,
