@@ -7,11 +7,6 @@
   }
 }
 
-.underline {
-  position: relative;
-  display: inline-block;
-}
-
 .underline::after {
   content: "";
   position: absolute;
@@ -34,8 +29,9 @@
 }
 
 .logo {
-  animation-name: slide-in;
+  display: inline;
   position: absolute;
+  animation-name: slide-in;
 }
 
 .logo,
@@ -44,4 +40,11 @@
   animation-duration: 1s;
   animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
   animation-fill-mode: both;
+}
+
+.grid-background {
+  background-image:
+    linear-gradient(to right, #eab30850 1px, transparent 1px),
+    linear-gradient(to bottom, #eab30850 1px, transparent 1px);
+  background-size: 48px 48px;
 }

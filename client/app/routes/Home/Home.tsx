@@ -6,33 +6,32 @@ import { AiFillGoogleCircle } from "react-icons/ai";
 import { Button } from "~/components";
 import { API } from "~/services";
 
+import type { Route } from "./+types/Home";
 import styles from "./Home.module.css";
 
-export function meta() {
-  return [{ title: "UofTeam Board" }];
-}
+const meta: Route.MetaFunction = () => [{ title: "UofTeam Board" }];
 
-export default function Home() {
+const Home = () => {
   const [query] = useSearchParams();
 
+  const handleLogin = () => {
+    window.location.href = API.getLoginRedirectUrl();
+  };
+
   return (
-    <div className="min-h-screen flex justify-center items-center bg-yellow-100">
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#eab30850_1px,transparent_1px),linear-gradient(to_bottom,#eab30850_1px,transparent_1px)] bg-[size:48px_48px]" />
+    <div className="h-screen flex justify-center items-center bg-yellow-100">
+      <div className={clsx("absolute inset-0", styles["grid-background"])} />
       <div className="absolute inset-0 bg-radial from-yellow-50 to-transparent" />
       <div className="z-10 px-4 pb-16 flex flex-col items-center text-center max-w-3xl">
-        <h1 className="text-3xl md:text-4xl text-blue-800 font-extrabold relative">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl text-blue-800 font-extrabold relative">
           <span className={styles.underline}>UofTeam Board</span>
-          <PiPencilDuotone className={clsx("inline text-4xl md:text-5xl", styles.logo)} />
+          <PiPencilDuotone className={clsx("text-4xl sm:text-5xl md:text-6xl", styles.logo)} />
         </h1>
-        <p className="mt-6 text-lg md:text-xl text-gray-600">
+        <p className="mt-4 sm:mt-6 md:mt-8 text-lg md:text-xl text-gray-600">
           A real-time collaborative canvas with AI-powered drawing completion—create, share, and
           enhance artwork together.
         </p>
-        <Button
-          icon={<AiFillGoogleCircle />}
-          onClick={() => (window.location.href = API.getLoginRedirectUrl())}
-          className="mt-10"
-        >
+        <Button icon={<AiFillGoogleCircle />} onClick={handleLogin} className="mt-8 sm:mt-12">
           Log in with Google
         </Button>
         {query.get("error") === "auth_failed" && (
@@ -43,4 +42,6 @@ export default function Home() {
       </div>
     </div>
   );
-}
+};
+
+export { Home as default, meta };
