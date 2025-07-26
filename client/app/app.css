@@ -14,3 +14,11 @@ body {
     color-scheme: dark;
   }
 }
+
+.react-colorful {
+  border: 2px solid black;
+}
+
+.react-colorful > * {
+  border-radius: 0 !important;
+}

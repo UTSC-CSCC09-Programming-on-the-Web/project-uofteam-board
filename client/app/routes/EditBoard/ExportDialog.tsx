@@ -8,6 +8,7 @@ import type { Path } from "~/types";
 
 import { computeBoundingBox, computeTransformCentered, type Transform } from "./utils";
 import { ColorPicker } from "./ColorPicker";
+import styles from "./ExportDialog.module.css";
 
 interface ExportDialogProps {
   paths: Path[];
@@ -19,7 +20,6 @@ const previewHeight = 300;
 const previewWidth = 400;
 
 function ExportDialog({ paths, onClose }: ExportDialogProps) {
-  const [transparent, setTransparent] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState("#f3f3f3");
 
   const previewTransform = useMemo<Transform>(() => {
@@ -53,17 +53,15 @@ function ExportDialog({ paths, onClose }: ExportDialogProps) {
     const layer = new Konva.Layer();
     stage.add(layer);
 
-    if (!transparent) {
-      layer.add(
-        new Konva.Rect({
-          x: 0,
-          y: 0,
-          width: bbox.width + previewPadding * 2,
-          height: bbox.height + previewPadding * 2,
-          fill: backgroundColor,
-        }),
-      );
-    }
+    layer.add(
+      new Konva.Rect({
+        x: 0,
+        y: 0,
+        width: bbox.width + previewPadding * 2,
+        height: bbox.height + previewPadding * 2,
+        fill: backgroundColor,
+      }),
+    );
 
     paths.forEach((path) => {
       layer.add(
@@ -89,58 +87,48 @@ function ExportDialog({ paths, onClose }: ExportDialogProps) {
 
   return (
     <Dialog open={paths.length > 0} onClose={onClose}>
-      <Dialog.Title>Export Selection</Dialog.Title>
+      <Dialog.Title>Export to Image</Dialog.Title>
       <Dialog.Content>
-        <Stage width={previewWidth} height={previewHeight}>
-          <Layer>
-            <Rect
-              x={0}
-              y={0}
-              width={previewWidth}
-              height={previewHeight}
-              fill={backgroundColor}
-              listening={false}
-            />
-            {paths.map((path) => (
-              <KonvaPath
-                id={path.id}
-                key={path.id}
-                data={path.d}
-                stroke={path.strokeColor}
-                strokeWidth={path.strokeWidth}
-                fill={path.fillColor}
-                x={path.x * previewTransform.scale + previewTransform.dx}
-                y={path.y * previewTransform.scale + previewTransform.dy}
-                scaleX={path.scaleX * previewTransform.scale}
-                scaleY={path.scaleY * previewTransform.scale}
-                rotation={path.rotation}
+        <div
+          className={clsx("outline outline-gray-200", styles.preview)}
+          style={{ width: previewWidth, height: previewHeight }}
+        >
+          <Stage width={previewWidth} height={previewHeight}>
+            <Layer>
+              <Rect
+                x={0}
+                y={0}
+                width={previewWidth}
+                height={previewHeight}
+                fill={backgroundColor}
               />
-            ))}
-          </Layer>
-        </Stage>
+              {paths.map((path) => (
+                <KonvaPath
+                  id={path.id}
+                  key={path.id}
+                  data={path.d}
+                  stroke={path.strokeColor}
+                  strokeWidth={path.strokeWidth}
+                  fill={path.fillColor}
+                  x={path.x * previewTransform.scale + previewTransform.dx}
+                  y={path.y * previewTransform.scale + previewTransform.dy}
+                  scaleX={path.scaleX * previewTransform.scale}
+                  scaleY={path.scaleY * previewTransform.scale}
+                  rotation={path.rotation}
+                />
+              ))}
+            </Layer>
+          </Stage>
+        </div>
         <div className="mt-2 flex gap-6 justify-end">
-          <label className="flex items-center justify-end gap-2">
-            Transparent?
-            <input
-              type="checkbox"
-              checked={transparent}
-              onChange={(e) => setTransparent(e.target.checked)}
-              className="cursor-pointer h-5 w-5"
-            />
-          </label>
-          <label
-            className={clsx(
-              "flex items-center justify-end gap-2",
-              transparent && "opacity-50 pointer-events-none",
-            )}
-          >
+          <div className="flex items-center justify-end gap-2">
             Background color
             <ColorPicker
-              defaultValue={backgroundColor}
+              size="sm"
+              value={backgroundColor}
               onChange={(color) => setBackgroundColor(color)}
-              className="!size-8"
             />
-          </label>
+          </div>
         </div>
       </Dialog.Content>
       <Dialog.Footer className="!mt-4">

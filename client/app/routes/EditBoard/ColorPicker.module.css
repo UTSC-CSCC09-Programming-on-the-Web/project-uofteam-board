@@ -1,8 +1,13 @@
-.input::-webkit-color-swatch-wrapper {
-  padding: 3px;
-}
-
-.input::-webkit-color-swatch {
-  border-color: #00000044;
-  border-width: 2px;
+.preview {
+  background-image:
+    linear-gradient(45deg, #ccc 25%, transparent 25%),
+    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ccc 75%),
+    linear-gradient(-45deg, transparent 75%, #ccc 75%);
+  background-size: 8px 8px;
+  background-position:
+    0 0,
+    0 4px,
+    4px -4px,
+    -4px 0px;
 }

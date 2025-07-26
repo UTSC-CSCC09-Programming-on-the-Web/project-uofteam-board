@@ -448,7 +448,11 @@ export default function EditBoard({ params }: Route.ComponentProps) {
                     icon={<PiRectangleDashedDuotone />}
                     className="!w-10 !px-0"
                   />
-                  <ColorPicker defaultValue={strokeColor} onChange={setStrokeColor} />
+                  <ColorPicker
+                    value={strokeColor}
+                    onChange={setStrokeColor}
+                    popoverClassName="!mt-4 !-right-3"
+                  />
                 </>
               )}
             </div>
