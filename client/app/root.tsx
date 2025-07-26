@@ -1,11 +1,6 @@
-import {
-  isRouteErrorResponse,
-  Links,
-  Meta,
-  Outlet,
-  Scripts,
-  ScrollRestoration,
-} from "react-router";
+import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router"; // prettier-ignore
+import { PiWarningOctagonDuotone } from "react-icons/pi";
+import { Toaster } from "react-hot-toast";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -29,6 +24,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            icon: <PiWarningOctagonDuotone className="text-red-700/80 text-3xl" />,
+            className:
+              "!text-red-900 !bg-red-100 !border-2 !border-red-700 !rounded-organic-sm !offset-shadow-md !shadow-red-900/30",
+          }}
+        />
         <ScrollRestoration />
         <Scripts />
       </body>
