@@ -15,7 +15,7 @@ function Dialog({ open, onClose, children, className, ...rest }: DialogProps) {
       <div
         className={clsx(
           "bg-white p-6 w-full shadow-2xl max-w-md m-4",
-          "border-2 border-gray-700 rounded-tl-[50px_10px] rounded-tr-[10px_50px] rounded-br-[50px_10px] rounded-bl-[50px_10px]",
+          "border-2 border-gray-700 rounded-organic-lg",
           className,
         )}
         {...rest}

@@ -26,7 +26,7 @@ function TextInput({ size = "md", icon, containerClassName, className, ...rest }
         {...rest}
         className={clsx(
           icon ? "pl-11" : "pl-4",
-          "w-full pr-4 bg-blue-100/50 border-2 border-gray-400 rounded-lg rounded-tl-[255px_25px] rounded-tr-[25px_225px] rounded-br-[225px_25px] rounded-bl-[25px_255px]",
+          "w-full pr-4 bg-blue-100/50 border-2 border-gray-400 rounded-organic-sm",
           sizeMap[size],
           className,
         )}
