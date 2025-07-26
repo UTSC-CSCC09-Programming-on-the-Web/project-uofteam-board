@@ -25,7 +25,8 @@
     "morgan": "^1.10.0",
     "query-string": "^9.2.1",
     "sequelize": "^6.37.3",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "stripe": "^18.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",

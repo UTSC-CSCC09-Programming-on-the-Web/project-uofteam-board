@@ -27,6 +27,7 @@ usersRouter.get("/login/callback", async (req, res) => {
     id: user.userId,
     email: user.email,
     name: user.name,
+    paid: false,
   };
 
   res.redirect(`${links.clientUrl}/dashboard`);

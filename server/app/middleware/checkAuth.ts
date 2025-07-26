@@ -1,12 +1,20 @@
 import { BoardShares } from "#models/BoardShares.js";
+import { StripeCustomers } from "#models/StripeCustomers.js";
 import { BoardPermission, User } from "#types/api.js";
 import { Request, Response, NextFunction } from "express";
 
-export function checkAuth(req: Request, res: Response, next: NextFunction) {
+async function checkPaid(userId: number): Promise<boolean> {
+  const stripeCustomer = await StripeCustomers.findByPk(userId);
+  return stripeCustomer?.status === 'active';
+}
+
+export async function checkAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.session?.user) {
     res.status(401).json({ error: "Authentication required" });
     return;
   }
+
+  req.session.user.paid = await checkPaid(req.session.user.id);
   next();
 }
 
