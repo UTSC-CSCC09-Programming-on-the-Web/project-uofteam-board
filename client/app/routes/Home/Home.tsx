@@ -11,8 +11,15 @@ import styles from "./Home.module.css";
 
 const meta: Route.MetaFunction = () => [{ title: "UofTeam Board" }];
 
+const errorMap = {
+  auth_failed: "Login failed. Please try again or contact the project team.",
+  not_logged_in: "You must be logged in before you access that page.",
+  unknown: "An unexpected error occurred. Please try again.",
+};
+
 const Home = () => {
   const [query] = useSearchParams();
+  const error = query.get("error");
 
   const handleLogin = () => {
     window.location.href = API.getLoginRedirectUrl();
@@ -34,9 +41,9 @@ const Home = () => {
         <Button icon={<AiFillGoogleCircle />} onClick={handleLogin} className="mt-8 sm:mt-12">
           Log in with Google
         </Button>
-        {query.get("error") === "auth_failed" && (
+        {error && (
           <p className="mt-4 text-red-600 text-sm">
-            Login failed. Please try again or contact the project team.
+            {errorMap[error in errorMap ? (error as keyof typeof errorMap) : "unknown"]}
           </p>
         )}
       </div>
