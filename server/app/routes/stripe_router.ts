@@ -34,6 +34,16 @@ stripeRouter.post("/create-checkout-session", checkAuth(false), async (req, res)
       }
     }
 
+    // Create customer
+    let customerId: string;
+    if (stripeCustomer) {
+      customerId = stripeCustomer.customerId
+    } else {
+      const customer = await stripe.customers.create();
+      customerId = customer.id;
+    }
+
+    // Create checkout session
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {
@@ -42,12 +52,10 @@ stripeRouter.post("/create-checkout-session", checkAuth(false), async (req, res)
         },
       ],
       mode: "subscription",
+      customer: customerId,
       metadata: {
         userId: req.session.user?.id as number,
       },
-      ...(stripeCustomer !== null && {
-        customer: stripeCustomer.customerId,
-      }),
       saved_payment_method_options: {
         payment_method_save: "enabled", // Adds "Save card for future use" checkbox
       },
@@ -62,7 +70,7 @@ stripeRouter.post("/create-checkout-session", checkAuth(false), async (req, res)
     } else {
       await StripeCustomers.create({
         userId: req.session.user?.id,
-        customerId: session.customer as string, // Customer auto created by checkout session
+        customerId: customerId,
         checkoutId: session.id,
         status: "checkout",
       });
