@@ -29,7 +29,7 @@ const variantDisabledClasses: Record<ButtonVariant, string> = {
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: "px-3 h-10 text-sm",
-  md: "px-4 h-12 text-md md:text-xl",
+  md: "px-4 h-12 text-md",
 };
 
 function Button({
@@ -50,11 +50,9 @@ function Button({
       onClick={onClick}
       disabled={isDisabled}
       className={clsx(
-        "inline-flex items-center justify-center gap-2 transition-all cursor-pointer font-semibold",
-        "border-2 rounded-tl-[255px_15px] rounded-tr-[15px_225px] rounded-br-[225px_15px] rounded-bl-[15px_255px]",
-        "active:shadow-none active:translate-x-[3px] active:translate-y-[3px]",
+        "inline-flex items-center justify-center gap-2 transition-colors cursor-pointer font-semibold select-none border-2 rounded-organic-sm",
         isDisabled ? variantDisabledClasses[variant] : variantClasses[variant],
-        isDisabled ? "pointer-events-none saturate-75" : "shadow-[3px_3px]",
+        isDisabled ? "pointer-events-none saturate-75" : "clickable-offset-shadow-md",
         sizeClasses[size],
         className,
       )}

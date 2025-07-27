@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { MdArrowBack, MdDelete, MdHelpOutline, MdSettings } from "react-icons/md";
 import { Stage, Layer, Rect, Path as KonvaPath, Transformer } from "react-konva";
+import { FaWandMagicSparkles, FaFileExport } from "react-icons/fa6";
 import { PiRectangleDashedDuotone } from "react-icons/pi";
-import { FaWandMagicSparkles } from "react-icons/fa6";
 import { RiPenNibLine } from "react-icons/ri";
 import colors from "tailwindcss/colors";
 import { v4 as uuid } from "uuid";
@@ -12,8 +12,8 @@ import clsx from "clsx";
 import color from "color";
 
 import type { Route } from "./+types/EditBoard";
-import { Button, Spinner } from "~/components";
 import type { Board, BoardShare, Path } from "~/types";
+import { Button, Spinner } from "~/components";
 import { API } from "~/services";
 
 import { useSpacePressed } from "./useSpacePressed";
@@ -23,6 +23,7 @@ import { HelpDialog } from "./HelpDialog";
 import { SettingsDialog } from "./SettingsDialog";
 import { computeBoundingBox } from "./utils";
 import { useWindowSize } from "./useWindowSize";
+import { ExportDialog } from "./ExportDialog";
 
 export function meta() {
   return [{ title: "Edit Board" }];
@@ -67,6 +68,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
   const [strokeWidth, setStrokeWidth] = useState(4);
   const [strokeColor, setStrokeColor] = useState("#193cb8");
   const [genFillState, setGenFillState] = useState<GenFillDialogState | null>(null);
+  const [pathsForExport, setPathsForExport] = useState<Path[]>([]);
 
   const [tool, setTool] = useState<Tool>("PEN");
   const [selectedIDs, setSelectedIDs] = useState<string[]>([]);
@@ -406,6 +408,18 @@ export default function EditBoard({ params }: Route.ComponentProps) {
                   />
                   <Button
                     size="sm"
+                    title="Delete"
+                    variant="neutral"
+                    icon={<FaFileExport />}
+                    onClick={() => {
+                      setPathsForExport(paths.filter((p) => selectedIDs.includes(p.id)));
+                      setSelectedIDs([]);
+                    }}
+                  >
+                    Export
+                  </Button>
+                  <Button
+                    size="sm"
                     icon={<FaWandMagicSparkles />}
                     onClick={() => {
                       const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
@@ -434,7 +448,11 @@ export default function EditBoard({ params }: Route.ComponentProps) {
                     icon={<PiRectangleDashedDuotone />}
                     className="!w-10 !px-0"
                   />
-                  <ColorPicker value={strokeColor} onChange={setStrokeColor} />
+                  <ColorPicker
+                    value={strokeColor}
+                    onChange={setStrokeColor}
+                    popoverClassName="!mt-4 !-right-3"
+                  />
                 </>
               )}
             </div>
@@ -591,6 +609,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
         shares={shares}
         onUpdate={handleSettingsUpdate}
       />
+      <ExportDialog paths={pathsForExport} onClose={() => setPathsForExport([])} />
       <HelpDialog open={helpDialogOpen} onClose={() => setHelpDialogOpen(false)} />
     </>
   );

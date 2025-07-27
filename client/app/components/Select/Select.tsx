@@ -31,8 +31,7 @@ function Select<T extends string>({
         {...rest}
         onChange={(e) => onChange?.(e.target.value as T)}
         className={clsx(
-          "pl-2 pr-10 bg-blue-100/50 appearance-none",
-          "border-2 border-gray-400 rounded-lg rounded-tl-[255px_25px] rounded-tr-[25px_225px] rounded-br-[225px_25px] rounded-bl-[25px_255px]",
+          "pl-2 pr-10 bg-blue-100/50 border-2 border-gray-400 rounded-organic-sm appearance-none",
           sizeMap[size],
           className,
         )}
