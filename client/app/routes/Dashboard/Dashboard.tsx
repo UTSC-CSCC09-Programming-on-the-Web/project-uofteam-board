@@ -19,7 +19,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [boards, setBoards] = useState<Board[]>([]);
-  const [boardsLoading, setBoardsLoading] = useState(false);
+  const [boardsLoading, setBoardsLoading] = useState(true);
   const [creatingNewBoard, setCreatingNewBoard] = useState(false);
   const [pagination, setPagination] = useState<Paginated<Board> | null>(null);
   const latestReqID = useRef(0);
