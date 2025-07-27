@@ -29,7 +29,7 @@ const BoardCard = ({ title, imageURL, chips, onClick }: BoardCardProps) => (
       <div className="absolute bottom-0 left-0 right-0 p-3 flex flex-wrap justify-end gap-2">
         {chips.map((x) => (
           <Chip key={x.label} variant="primary">
-            <span className="opacity-60">{x.label}: </span>
+            <span className="opacity-60 mr-1">{x.label}:</span>
             {x.value}
           </Chip>
         ))}

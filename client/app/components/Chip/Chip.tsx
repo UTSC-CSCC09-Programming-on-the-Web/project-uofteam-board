@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import React from "react";
 
-type ChipVariant = "primary" | "secondary" | "neutral";
+type ChipVariant = "primary" | "secondary" | "neutral" | "success" | "danger";
 
 interface ChipProps
   extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
@@ -9,23 +9,25 @@ interface ChipProps
 }
 
 const variantClasses: Record<ChipVariant, string> = {
-  primary: "text-blue-800 bg-blue-100 border-blue-800 shadow-blue-950/20",
-  secondary: "text-yellow-800 bg-yellow-100 border-yellow-800 shadow-yellow-950/20",
-  neutral: "text-gray-800 bg-gray-200 border-gray-800 shadow-gray-950/20",
+  primary: "text-blue-800 bg-blue-100 border-blue-800/50",
+  secondary: "text-yellow-800 bg-yellow-100 border-yellow-800/50",
+  neutral: "text-gray-800 bg-gray-200 border-gray-800/50",
+  success: "text-green-800 bg-green-100 border-green-800/50",
+  danger: "text-red-800 bg-red-100 border-red-800/50",
 };
 
 function Chip({ variant = "neutral", children, className, ...rest }: ChipProps) {
   return (
-    <div
+    <span
       className={clsx(
-        "font-semibold border rounded-full px-2 py-1 text-sm",
+        "h-8 flex items-center border rounded-full px-3 text-sm font-semibold",
         variantClasses[variant],
         className,
       )}
       {...rest}
     >
       {children}
-    </div>
+    </span>
   );
 }
 
