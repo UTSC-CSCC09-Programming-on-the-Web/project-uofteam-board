@@ -29,7 +29,7 @@ const Home = () => {
       })
       .catch(() => {
         setQuery(new URLSearchParams({ error: "auth_failed" }));
-      })
+      });
   };
 
   return (

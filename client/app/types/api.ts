@@ -5,7 +5,7 @@ export type Response<T = null> =
 export type BoardPermission = "owner" | "editor" | "viewer";
 
 export interface UrlLink {
-  url: string
+  url: string;
 }
 
 export interface Board {

@@ -35,8 +35,8 @@ usersRouter.get("/login/callback", async (req, res) => {
 
 usersRouter.get("/login", async (req, res) => {
   res.json({
-    url: `${links.authUrl}?${authParams}`
-  } satisfies UrlLink)
+    url: `${links.authUrl}?${authParams}`,
+  } satisfies UrlLink);
 });
 
 usersRouter.post("/logout", checkAuth(false), async (req, res) => {

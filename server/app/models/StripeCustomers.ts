@@ -17,8 +17,8 @@ StripeCustomers.init(
       primaryKey: true,
       references: {
         model: "Users",
-        key: "userId"
-      }
+        key: "userId",
+      },
     },
     customerId: {
       type: DataTypes.STRING,
@@ -40,7 +40,7 @@ StripeCustomers.init(
     status: {
       type: DataTypes.STRING,
       allowNull: false,
-    }
+    },
   },
   {
     sequelize,

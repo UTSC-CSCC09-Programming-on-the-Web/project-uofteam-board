@@ -67,7 +67,6 @@ app.use("/api/auth", usersRouter);
 app.use("/api/boards", boardsRouter);
 app.use("/api/stripe", stripeRouter);
 
-
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack || err);
   res.status(500).json({ error: "Internal Server Error" });
