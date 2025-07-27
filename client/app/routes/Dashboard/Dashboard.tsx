@@ -29,7 +29,7 @@ const Dashboard = () => {
       setBoardsLoading(true);
       const reqID = ++latestReqID.current;
       // Sleep ensures the loading state is not visually jarring
-      const [, res] = await Promise.all([sleep(300), API.getBoards(0, 6, query)]);
+      const [, res] = await Promise.all([sleep(600), API.getBoards(0, 6, query)]);
       if (reqID !== latestReqID.current) return;
 
       if (res.error !== null) {
