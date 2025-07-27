@@ -8,7 +8,7 @@ import { BoardShareUpdate } from "#types/api.js";
 
 export const sharesSubRouter = express.Router({ mergeParams: true });
 
-sharesSubRouter.get("/", checkAuth, async (req, res) => {
+sharesSubRouter.get("/", checkAuth(), async (req, res) => {
   const ALLOWED: BoardPermission[] = ["owner", "editor", "viewer"];
   const { id } = req.params;
 
@@ -51,7 +51,7 @@ sharesSubRouter.get("/", checkAuth, async (req, res) => {
   );
 });
 
-sharesSubRouter.post("/", checkAuth, async (req, res) => {
+sharesSubRouter.post("/", checkAuth(), async (req, res) => {
   const ALLOWED: BoardPermission[] = ["owner", "editor"];
   const { userEmail } = req.body;
   const { id } = req.params;
@@ -106,7 +106,7 @@ sharesSubRouter.post("/", checkAuth, async (req, res) => {
   } satisfies BoardShare);
 });
 
-sharesSubRouter.post("/update", checkAuth, async (req, res) => {
+sharesSubRouter.post("/update", checkAuth(), async (req, res) => {
   const ALLOWED: BoardPermission[] = ["owner", "editor"];
   const updates: BoardShareUpdate[] = req.body;
   const { id } = req.params;

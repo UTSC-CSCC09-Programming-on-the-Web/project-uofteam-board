@@ -8,14 +8,21 @@ async function checkPaid(userId: number): Promise<boolean> {
   return stripeCustomer?.status === 'active';
 }
 
-export async function checkAuth(req: Request, res: Response, next: NextFunction) {
-  if (!req.session?.user) {
-    res.status(401).json({ error: "Authentication required" });
-    return;
-  }
+export function checkAuth(requirePayment = true): (req: Request, res: Response, next: NextFunction) => void {
 
-  req.session.user.paid = await checkPaid(req.session.user.id);
-  next();
+  return async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.session?.user) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+    
+    req.session.user.paid = await checkPaid(req.session.user.id);
+    if (requirePayment && !req.session.user.paid) {
+      res.status(403).json({ error: "User has not paid subscription fee" });
+      return;
+    }
+    next();
+  }
 }
 
 export async function checkCanvasAuth(

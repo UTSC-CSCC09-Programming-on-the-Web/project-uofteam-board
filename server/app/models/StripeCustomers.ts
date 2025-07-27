@@ -5,6 +5,8 @@ import { Users } from "./Users.js";
 export class StripeCustomers extends Model {
   declare userId: number;
   declare customerId: string;
+  declare subscriptionId: string;
+  declare checkoutId: string;
   declare status: string;
 }
 
@@ -22,6 +24,18 @@ StripeCustomers.init(
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
+    },
+    subscriptionId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+      defaultValue: null,
+    },
+    checkoutId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+      defaultValue: null,
     },
     status: {
       type: DataTypes.STRING,

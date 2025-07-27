@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { Users } from "#models/Users.js";
-import type { User } from "#types/api.js";
+import type { UrlLink, User } from "#types/api.js";
 import { checkAuth } from "#middleware/checkAuth.js";
 import { getGoogleAuth, authParams, links } from "#oauth/googleoauth.js";
 
 export const usersRouter = Router();
 
-usersRouter.get("/me", checkAuth, async (req, res) => {
+usersRouter.get("/me", checkAuth(false), async (req, res) => {
   res.json(req.session.user);
 });
 
@@ -36,10 +36,10 @@ usersRouter.get("/login/callback", async (req, res) => {
 usersRouter.get("/login", async (req, res) => {
   res.json({
     url: `${links.authUrl}?${authParams}`
-  })
+  } satisfies UrlLink)
 });
 
-usersRouter.post("/logout", checkAuth, async (req, res) => {
+usersRouter.post("/logout", checkAuth(false), async (req, res) => {
   const sessionUser = req.session.user;
   if (!sessionUser) {
     throw new Error("No user session found for logout");
