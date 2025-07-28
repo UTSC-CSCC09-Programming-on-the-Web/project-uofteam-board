@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { MdArrowBack, MdDelete, MdHelpOutline, MdSettings } from "react-icons/md";
 import { Stage, Layer, Rect, Path as KonvaPath, Transformer } from "react-konva";
 import { FaWandMagicSparkles, FaFileExport } from "react-icons/fa6";
 import { PiRectangleDashedDuotone } from "react-icons/pi";
 import { RiPenNibLine } from "react-icons/ri";
+import { useNavigate } from "react-router";
 import colors from "tailwindcss/colors";
 import { v4 as uuid } from "uuid";
 import Konva from "konva";
@@ -362,6 +362,43 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
     setShares(shares);
   };
 
+  const handleDelete = useCallback(() => {
+    if (selectedIDs.length === 0) return;
+    setPaths((prev) => prev.filter((path) => !selectedIDs.includes(path.id)));
+    API.emitBoardUpdate(params.bid, { type: "DELETE_PATHS", ids: selectedIDs });
+    setSelectedIDs([]);
+  }, [selectedIDs, params.bid]);
+
+  const handleExport = useCallback(() => {
+    if (selectedIDs.length === 0) return;
+    const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
+    setPathsForExport(selectedPaths);
+    setSelectedIDs([]);
+  }, [selectedIDs, paths]);
+
+  const handleGenerativeFill = useCallback(() => {
+    if (selectedIDs.length === 0) return;
+    const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
+    setGenFillState({ boardID: params.bid, paths: selectedPaths });
+    setSelectedIDs([]);
+  }, [selectedIDs, paths, params.bid]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+      if (e.key === "Delete" || e.key === "Backspace") {
+        handleDelete();
+      } else if (e.key === "Escape") {
+        setSelectedIDs([]);
+        selectionRectRef.current?.hide();
+        selectionRectDataRef.current = null;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleDelete]);
+
   if (!board) {
     return (
       <div className="fixed inset-0 flex justify-center items-center text-yellow-700/60 bg-yellow-50">
@@ -394,45 +431,30 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
           {(board.permission === "owner" || board.permission === "editor") && (
             <div className="flex items-center gap-2 pointer-events-auto">
               {selectedIDs.length > 0 ? (
-                <>
+                <Fragment key="selected-actions">
                   <Button
                     size="sm"
                     title="Delete"
                     variant="danger"
                     icon={<MdDelete />}
                     className="!w-10 !px-0"
-                    onClick={() => {
-                      setPaths((prev) => prev.filter((path) => !selectedIDs.includes(path.id)));
-                      API.emitBoardUpdate(params.bid, { type: "DELETE_PATHS", ids: selectedIDs });
-                      setSelectedIDs([]);
-                    }}
+                    onClick={handleDelete}
                   />
                   <Button
                     size="sm"
                     title="Delete"
                     variant="neutral"
                     icon={<FaFileExport />}
-                    onClick={() => {
-                      setPathsForExport(paths.filter((p) => selectedIDs.includes(p.id)));
-                      setSelectedIDs([]);
-                    }}
+                    onClick={handleExport}
                   >
                     Export
                   </Button>
-                  <Button
-                    size="sm"
-                    icon={<FaWandMagicSparkles />}
-                    onClick={() => {
-                      const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
-                      setGenFillState({ boardID: params.bid, paths: selectedPaths });
-                      setSelectedIDs([]);
-                    }}
-                  >
+                  <Button size="sm" icon={<FaWandMagicSparkles />} onClick={handleGenerativeFill}>
                     Generative Fill
                   </Button>
-                </>
+                </Fragment>
               ) : (
-                <>
+                <Fragment key="no-selection-actions">
                   <Button
                     size="sm"
                     title="Pen tool"
@@ -454,7 +476,7 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
                     onChange={setStrokeColor}
                     popoverClassName="!mt-4 !-right-3"
                   />
-                </>
+                </Fragment>
               )}
             </div>
           )}
