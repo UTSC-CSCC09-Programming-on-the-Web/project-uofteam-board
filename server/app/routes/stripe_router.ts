@@ -3,84 +3,22 @@ import Stripe from "stripe";
 import express from "express";
 import { checkAuth } from "#middleware/checkAuth.js";
 import { StripeCustomers } from "#models/StripeCustomers.js";
-import AsyncLock from "async-lock";
 import { UrlLink } from "#types/api.js";
+import { create_checkout_session } from "#stripe/checkout.js";
 const stripe = new Stripe(process.env.STRIPE_API_SECRET as string);
 
-const SUBSCRIPTION_PRICE_ID = "price_1RovPKCuibBrJj0egxj3LP9J";
 
 export const stripeRouter = Router();
 export const stripeWebhook = Router();
 
-const checkoutLock = new AsyncLock();
 stripeRouter.post("/create-checkout-session", checkAuth(false), async (req, res) => {
   if (!req.session.user) throw new Error("Endpoint requiring authentication failed");
+  const result = await create_checkout_session(req.session.user);
 
-  const stripeCustomer = await StripeCustomers.findByPk(req.session.user?.id);
-  if (stripeCustomer?.status === "active") {
+  if (result === null) {
     res.status(422).json({ error: "User is already subscribed, cannot checkout again" });
     return;
   }
-
-  // Prevent getting more than one checkout session per user
-  const result = await checkoutLock.acquire(req.session.user.id.toString(), async () => {
-    if (stripeCustomer?.checkoutId) {
-      const existingSession = await stripe.checkout.sessions.retrieve(stripeCustomer.checkoutId);
-      if (existingSession.status === "open") {
-        console.log(
-          `User ${stripeCustomer.userId} already has an open Checkout Session ${existingSession.id}. Redirecting to existing session.`,
-        );
-        return { url: existingSession.url };
-      }
-    }
-
-    // Create customer
-    let customerId: string;
-    if (stripeCustomer) {
-      customerId = stripeCustomer.customerId;
-    } else {
-      const customer = await stripe.customers.create();
-      customerId = customer.id;
-    }
-
-    // Create checkout session
-    const session = await stripe.checkout.sessions.create({
-      line_items: [
-        {
-          price: SUBSCRIPTION_PRICE_ID,
-          quantity: 1,
-        },
-      ],
-      mode: "subscription",
-      customer: customerId,
-      metadata: {
-        userId: req.session.user?.id as number,
-      },
-      saved_payment_method_options: {
-        payment_method_save: "enabled", // Adds "Save card for future use" checkbox
-      },
-      success_url: `${process.env.CLIENT_URL}/checkout`,
-      cancel_url: `${process.env.CLIENT_URL}/account`,
-    });
-
-    // Update status in db
-    if (stripeCustomer) {
-      stripeCustomer.checkoutId = session.id;
-      await stripeCustomer.save();
-    } else {
-      await StripeCustomers.create({
-        userId: req.session.user?.id,
-        customerId: customerId,
-        checkoutId: session.id,
-        status: "checkout",
-      });
-    }
-
-    return session;
-  });
-
-  if (!result?.url)
-    throw new Error(`Failed to get a checkout session for user ${req.session.user}`);
   res.json({ url: result.url } satisfies UrlLink);
 });
 

@@ -3,6 +3,8 @@ import { Users } from "#models/Users.js";
 import type { UrlLink, User } from "#types/api.js";
 import { checkAuth, checkPaid } from "#middleware/checkAuth.js";
 import { getGoogleAuth, authParams, links } from "#oauth/googleoauth.js";
+import { SessionData } from "express-session";
+import { create_checkout_session } from "#stripe/checkout.js";
 
 export const usersRouter = Router();
 
@@ -23,14 +25,22 @@ usersRouter.get("/login/callback", async (req, res) => {
   if (!user) {
     user = await Users.create({ name, email });
   }
+
+  const paid = await checkPaid(user.userId);
   req.session.user = {
     id: user.userId,
     email: user.email,
     name: user.name,
-    paid: await checkPaid(user.userId),
-  };
-  
-  const paid = req.session.user.paid;
+    paid: paid,
+  } satisfies SessionData["user"];
+
+  if (!paid) {
+    const checkoutLink = await create_checkout_session(req.session.user);
+    if (checkoutLink != null) {
+      res.redirect(checkoutLink.url);
+      return;
+    }
+  }
   res.redirect(`${links.clientUrl}/${paid ? 'dashboard' : 'account'}`);
 });
 
