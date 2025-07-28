@@ -37,7 +37,7 @@ stripeRouter.post("/create-checkout-session", checkAuth(false), async (req, res)
     // Create customer
     let customerId: string;
     if (stripeCustomer) {
-      customerId = stripeCustomer.customerId
+      customerId = stripeCustomer.customerId;
     } else {
       const customer = await stripe.customers.create();
       customerId = customer.id;
@@ -59,7 +59,7 @@ stripeRouter.post("/create-checkout-session", checkAuth(false), async (req, res)
       saved_payment_method_options: {
         payment_method_save: "enabled", // Adds "Save card for future use" checkbox
       },
-      success_url: `${process.env.CLIENT_URL}/dashboard`, // TODO: change to match the intermediary page
+      success_url: `${process.env.CLIENT_URL}/checkout`,
       cancel_url: `${process.env.CLIENT_URL}/?error="stripe_cancel"`, // TODO: change to match the intermediary page
     });
 
