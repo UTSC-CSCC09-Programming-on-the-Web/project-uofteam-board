@@ -29,9 +29,9 @@ usersRouter.get("/login/callback", async (req, res) => {
     name: user.name,
     paid: await checkPaid(user.userId),
   };
-  
+
   const paid = req.session.user.paid;
-  res.redirect(`${links.clientUrl}/${paid ? 'dashboard' : 'account'}`);
+  res.redirect(`${links.clientUrl}/${paid ? "dashboard" : "account"}`);
 });
 
 usersRouter.get("/login", async (req, res) => {
