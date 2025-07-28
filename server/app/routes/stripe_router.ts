@@ -60,7 +60,7 @@ stripeRouter.post("/create-checkout-session", checkAuth(false), async (req, res)
         payment_method_save: "enabled", // Adds "Save card for future use" checkbox
       },
       success_url: `${process.env.CLIENT_URL}/checkout`,
-      cancel_url: `${process.env.CLIENT_URL}/account`, // TODO: change to match the intermediary page
+      cancel_url: `${process.env.CLIENT_URL}/account`,
     });
 
     // Update status in db
