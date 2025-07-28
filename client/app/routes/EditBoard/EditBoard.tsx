@@ -22,6 +22,7 @@ import { SettingsDialog } from "./SettingsDialog";
 import { GenFillDialog, type GenFillDialogState } from "./GenFillDialog";
 import { computeBoundingBox, startEndPointToBoundingBox, type BoundingBox, type Point, type StartEndPoint } from "./utils"; // prettier-ignore
 import { useSpacePressed } from "./useSpacePressed";
+import { useMousePressed } from "./useMousePressed";
 import { useWindowSize } from "./useWindowSize";
 
 const meta: Route.MetaFunction = () => [{ title: "Edit Board" }];
@@ -50,6 +51,7 @@ type Tool = "SELECTION" | "PEN";
 
 const EditBoard = ({ params }: Route.ComponentProps) => {
   const navigate = useNavigate();
+  const mousePressed = useMousePressed();
   const spacePressed = useSpacePressed();
   const [board, setBoard] = useState<Board | null>(null);
   const [shares, setShares] = useState<BoardShare[]>([]);
@@ -574,7 +576,8 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
         onWheel={handleWheel}
         draggable={spacePressed}
         className={clsx({
-          "cursor-grab": spacePressed,
+          "cursor-grab": spacePressed && !mousePressed,
+          "cursor-grabbing": spacePressed && mousePressed,
           "cursor-crosshair": tool === "PEN" && !spacePressed,
           "cursor-default": tool === "SELECTION" && !spacePressed,
         })}
