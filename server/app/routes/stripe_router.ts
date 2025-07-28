@@ -4,7 +4,7 @@ import express from "express";
 import { checkAuth } from "#middleware/checkAuth.js";
 import { StripeCustomers } from "#models/StripeCustomers.js";
 import { UrlLink } from "#types/api.js";
-import { create_checkout_session } from "#stripe/checkout.js";
+import { create_checkout_session } from "#services/stripecheckout.js";
 const stripe = new Stripe(process.env.STRIPE_API_SECRET as string);
 
 export const stripeRouter = Router();
