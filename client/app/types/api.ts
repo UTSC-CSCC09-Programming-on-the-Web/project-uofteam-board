@@ -20,6 +20,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  paid: boolean;
 }
 
 export interface BoardShare {

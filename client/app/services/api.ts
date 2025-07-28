@@ -20,11 +20,11 @@ class ApiService {
     return this.get("/auth/login");
   }
 
-  public createCheckoutSession(): Promise<Response<UrlLink>> {
+  public createStripeCheckoutSession(): Promise<Response<UrlLink>> {
     return this.post("/stripe/create-checkout-session");
   }
 
-  public createCustomerPortalSession(): Promise<Response<UrlLink>> {
+  public createStripePortalSession(): Promise<Response<UrlLink>> {
     return this.post("/stripe/create-portal-session");
   }
 
