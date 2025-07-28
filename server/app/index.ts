@@ -5,6 +5,7 @@ import { logger } from "#middleware/logger.js";
 import { usersRouter } from "#routes/users_router.js";
 import { boardsRouter } from "#routes/boards_router.js";
 import { sharesSubRouter } from "#routes/shares_router.js";
+import { stripeRouter, stripeWebhook } from "#routes/stripe_router.js";
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
@@ -20,6 +21,8 @@ const corsConfig = {
 };
 
 const app = express();
+
+app.use("/api/stripe/", stripeWebhook); // Must be before the json parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(logger);
@@ -62,6 +65,7 @@ app.get("/", (req, res) => {
 boardsRouter.use("/:id/shares", sharesSubRouter);
 app.use("/api/auth", usersRouter);
 app.use("/api/boards", boardsRouter);
+app.use("/api/stripe", stripeRouter);
 
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack || err);

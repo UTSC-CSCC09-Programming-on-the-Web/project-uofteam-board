@@ -1,7 +1,9 @@
-import clsx from "clsx";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { PiPencilDuotone } from "react-icons/pi";
 import { AiFillGoogleCircle } from "react-icons/ai";
+import toast from "react-hot-toast";
+import clsx from "clsx";
 
 import { Button } from "~/components";
 import { API } from "~/services";
@@ -18,18 +20,33 @@ const errorMap = {
 };
 
 const Home = () => {
-  const [query] = useSearchParams();
-  const error = query.get("error");
+  const [query, setQuery] = useSearchParams();
+  const [error, setError] = useState(query.get("error"));
+  const [loggingIn, setLoggingIn] = useState(false);
 
-  const handleLogin = () => {
-    window.location.href = API.getLoginRedirectUrl();
+  useEffect(() => {
+    setQuery();
+  }, []);
+
+  const handleLogin = async () => {
+    setLoggingIn(true);
+    setError(null);
+    const res = await API.getLoginRedirectUrl();
+    if (res.error !== null) {
+      toast(`Failed to fetch login URL:\n ${res.error}`);
+      setError("auth_failed");
+      setLoggingIn(false);
+      return;
+    }
+
+    window.location.href = res.data.url;
   };
 
   return (
     <div className="h-screen flex justify-center items-center bg-yellow-100">
       <div className={clsx("absolute inset-0", styles["grid-background"])} />
       <div className="absolute inset-0 bg-radial from-yellow-50 to-transparent" />
-      <div className="z-10 px-4 pb-16 flex flex-col items-center text-center max-w-3xl">
+      <div className="z-10 px-4 pb-8 flex flex-col items-center text-center max-w-3xl">
         <h1 className="text-3xl sm:text-4xl md:text-5xl text-blue-800 font-extrabold relative">
           <span className={styles.underline}>UofTeam Board</span>
           <PiPencilDuotone className={clsx("text-4xl sm:text-5xl md:text-6xl", styles.logo)} />
@@ -38,14 +55,21 @@ const Home = () => {
           A real-time collaborative canvas with AI-powered drawing completion—create, share, and
           enhance artwork together.
         </p>
-        <Button icon={<AiFillGoogleCircle />} onClick={handleLogin} className="mt-8 sm:mt-12">
+        <Button
+          loading={loggingIn}
+          onClick={handleLogin}
+          icon={<AiFillGoogleCircle />}
+          className="mt-8 sm:mt-12"
+        >
           Log in with Google
         </Button>
-        {error && (
-          <p className="mt-4 text-red-600 text-sm">
-            {errorMap[error in errorMap ? (error as keyof typeof errorMap) : "unknown"]}
-          </p>
-        )}
+        <p className="mt-4 text-red-600 text-sm">
+          {error ? (
+            errorMap[error in errorMap ? (error as keyof typeof errorMap) : "unknown"]
+          ) : (
+            <span className="invisible">&nbsp;</span>
+          )}
+        </p>
       </div>
     </div>
   );
