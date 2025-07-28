@@ -549,6 +549,11 @@ export default function EditBoard({ params }: Route.ComponentProps) {
         onMouseUp={handleMouseUp}
         onWheel={handleWheel}
         draggable={spacePressed}
+        className={clsx({
+          "cursor-grab": spacePressed,
+          "cursor-crosshair": tool === "PEN" && !spacePressed,
+          "cursor-default": tool === "SELECTION" && !spacePressed,
+        })}
       >
         <Layer>
           {paths.map((path) => {
