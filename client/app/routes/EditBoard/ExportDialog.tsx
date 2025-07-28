@@ -3,11 +3,10 @@ import { Layer, Stage, Path as KonvaPath, Rect } from "react-konva";
 import Konva from "konva";
 import clsx from "clsx";
 
-import { Dialog } from "~/components";
+import { ColorPicker, Dialog } from "~/components";
 import type { Path } from "~/types";
 
 import { computeBoundingBox, computeTransformCentered, type Transform } from "./utils";
-import { ColorPicker } from "./ColorPicker";
 import styles from "./ExportDialog.module.css";
 
 interface ExportDialogProps {

@@ -13,12 +13,11 @@ import color from "color";
 
 import type { Route } from "./+types/EditBoard";
 import type { Board, BoardShare, Path } from "~/types";
-import { Button, Spinner } from "~/components";
+import { Button, ColorPicker, Spinner } from "~/components";
 import { API } from "~/services";
 
 import { useSpacePressed } from "./useSpacePressed";
 import { GenFillDialog, type GenFillDialogState } from "./GenFillDialog";
-import { ColorPicker } from "./ColorPicker";
 import { HelpDialog } from "./HelpDialog";
 import { SettingsDialog } from "./SettingsDialog";
 import { computeBoundingBox } from "./utils";
