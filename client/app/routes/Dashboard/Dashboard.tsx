@@ -36,6 +36,7 @@ const Dashboard = () => {
         if (res.status === 401) {
           navigate("/?error=not_logged_in");
         } else if (res.status === 403) {
+          toast("You need to be subscribed to access the dashboard");
           navigate("/account");
         } else {
           toast(`Failed to fetch boards:\n ${res.error}`);
