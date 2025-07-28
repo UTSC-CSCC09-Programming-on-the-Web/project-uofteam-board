@@ -3,11 +3,12 @@ import { Strokes } from "#models/Strokes.js";
 import type { Path } from "#types/api.js";
 import * as KonvaUtil from "./utils";
 import fs from "fs";
+import { RenderedImage } from "#types/image.js";
 
 const PADDING = 50; // Padding around the image
 const SIZE = 1000; // Size of the image
 
-export const renderPaths = (paths: Path[]): string => {
+export const renderPaths = (paths: Path[]): RenderedImage => {
   const stage = new Konva.Stage({ width: SIZE, height: SIZE });
   const layer = new Konva.Layer();
 
@@ -62,11 +63,22 @@ export const renderPaths = (paths: Path[]): string => {
     throw Error(`Could not render paths to base64 image. Paths:${paths}`);
   }
 
-  return base64;
+  return {
+    mimeType: "image/png",
+    base64: base64
+  } satisfies RenderedImage;
 };
 
-export async function render(boardId: number, ids: string[]): Promise<string> {
-  const strokes = await Strokes.findAll({ where: { strokeId: ids, boardId } });
+export async function render(boardId: number, ids: string[] = []): Promise<RenderedImage> {
+  const strokes = await Strokes.findAll({
+    where: {
+      boardId,
+      ...(ids.length === 0 && {
+        strokeId: ids,
+      })
+    }
+  });
+
   const paths = strokes.map((stroke) => ({
     id: stroke.strokeId,
     d: stroke.d,
@@ -80,17 +92,14 @@ export async function render(boardId: number, ids: string[]): Promise<string> {
     rotation: stroke.rotation,
   })) satisfies Path[];
 
-  const base64Image = await renderPaths(paths);
-  if (!base64Image) {
-    throw new Error("Failed to extract base64 image data");
-  }
+  const renderedImg = await renderPaths(paths);
 
   if (process.env.SAVE_IMAGES_DEBUG_ENABLED === "1") {
     const filename = `${Date.now()}_img.png`;
-    fs.writeFile(`./app/image-ai/dump/${filename}`, base64Image, { encoding: "base64" }, () => {
+    fs.writeFile(`./app/image-ai/dump/${filename}`, renderedImg.base64, { encoding: "base64" }, () => {
       console.log("File created");
     });
   }
 
-  return base64Image;
+  return renderedImg;
 }

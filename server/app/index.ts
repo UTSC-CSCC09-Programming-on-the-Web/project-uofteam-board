@@ -1,5 +1,5 @@
 import express from "express";
-import { sequelize } from "./datasource.js";
+import { sequelize } from "./config/datasource.js";
 import session from "express-session";
 import { logger } from "#middleware/logger.js";
 import { usersRouter } from "#routes/users_router.js";
@@ -9,6 +9,7 @@ import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import { registerWebSocket } from "#ws/canvas.js";
+import { redisClient } from "#config/redis.js";
 
 if (!process.env.SECRET_KEY) {
   console.warn("SECRET_KEY is not set. Using default secret key for session management.");
@@ -50,9 +51,15 @@ registerWebSocket(io);
 try {
   await sequelize.authenticate();
   await sequelize.sync({ alter: { drop: false } });
-  console.log("Connection has been established successfully.");
+  console.log("PostgreSQL has been established successfully.");
 } catch (error) {
   console.error("Unable to connect to the database:", error);
+}
+
+try {
+  await redisClient.connect();
+} catch (error) {
+  console.error("Unable to connect to redis:", error)
 }
 
 app.get("/", (req, res) => {

@@ -4,6 +4,8 @@ import { checkCanvasAuth } from "#middleware/checkAuth.js";
 import { ClientBoardUpdate, Path, ServerBoardUpdate } from "#types/api.js";
 import { Strokes } from "#models/Strokes.js";
 import util from "util";
+import { Boards } from "#models/Boards.js";
+import { Op } from "sequelize";
 
 const onUpdate = async (
   data: ClientBoardUpdate,
@@ -12,8 +14,10 @@ const onUpdate = async (
   console.log("Received update:", data);
   switch (data.type) {
     case "CREATE_OR_REPLACE_PATHS": {
-      data.paths.forEach(async (path) => {
-        await Strokes.upsert({
+      const modifiedBoards = new Set<number>();
+      const newStrokes = data.paths.map(async (path) => {
+        modifiedBoards.add(boardId);
+        return Strokes.upsert({
           strokeId: path.id,
           boardId: boardId,
           d: path.d,
@@ -27,6 +31,12 @@ const onUpdate = async (
           rotation: path.rotation,
         });
       });
+      const updatedBoards = Boards.update({ updatedAt: new Date() }, {
+        where: {
+          boardId: { [Op.in]: Array.from(modifiedBoards) }
+        }
+      })
+      await Promise.allSettled([updatedBoards, ...newStrokes]);
       return data satisfies ServerBoardUpdate;
     }
     case "DELETE_PATHS": {

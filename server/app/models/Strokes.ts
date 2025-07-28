@@ -1,5 +1,5 @@
 import { Model, DataTypes } from "sequelize";
-import { sequelize } from "../datasource.js";
+import { sequelize } from "../config/datasource.js";
 
 export class Strokes extends Model {
   declare strokeId: string;

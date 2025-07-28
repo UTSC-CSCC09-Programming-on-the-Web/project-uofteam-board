@@ -7,8 +7,14 @@ import { render } from "#image-ai/render.js";
 import { main as aiModel } from "#image-ai/model.js";
 import { vectorizeBase64 } from "#image-ai/vectorize.js";
 import { BoardShares } from "#models/BoardShares.js";
+import { redisClient } from "#config/redis.js";
+import { RenderedImage } from "#types/image.js";
+import AsyncLock from "async-lock";
+
+const PREVIEW_CACHE_DURATION = 60 * 60 * 24 // 24 hours
 
 export const boardsRouter = express.Router();
+
 
 boardsRouter.post("/", checkAuth, async (req, res) => {
   const { name } = req.body;
@@ -109,6 +115,48 @@ boardsRouter.get("/:id", checkAuth, async (req, res) => {
   } satisfies Board);
 });
 
+const previewRenderLock = new AsyncLock();
+const getCachedPreview = async (boardId: string): Promise<RenderedImage | null> => {
+  return await previewRenderLock.acquire(boardId, async () => {
+    // Hit
+    const previewImg = await redisClient.get(boardId);
+    if (previewImg) return JSON.parse(previewImg) satisfies RenderedImage;
+
+    // Miss
+    try {
+      const renderedImg = await render(Number(boardId));
+      await redisClient.set(boardId, JSON.stringify(renderedImg), {
+        expiration: { type: 'EX', value: PREVIEW_CACHE_DURATION }
+      });
+      return previewImg;
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  })
+}
+
+boardsRouter.get("/:id/picture", checkAuth, async (req, res) => {
+  const { id } = req.params;
+  const board = await BoardShares.findOne({
+    where: {
+      boardId: id,
+      userId: req.session.user?.id,
+    },
+  });
+  if (!board) {
+    res.status(404).json({ error: "Board not found" });
+    return;
+  }
+
+  const previewImg = await getCachedPreview(id);
+  if (previewImg === null) throw new Error("Failed to generate cached preview image!");
+
+  const imgBuffer = Buffer.from(previewImg.base64, 'base64');
+  res.set('Content-Type', previewImg.mimeType);
+  res.send(imgBuffer);
+});
+
 boardsRouter.patch("/:id", checkAuth, async (req, res) => {
   const ALLOWED: BoardPermission[] = ["owner", "editor"];
   const { name } = req.body;
@@ -192,8 +240,8 @@ boardsRouter.post("/:id/generative-fill", checkAuth, async (req, res) => {
   }
 
   try {
-    const imgBase64 = await render(Number(id), pathIDs);
-    const newImgBase64 = await aiModel(imgBase64);
+    const renderedImg = await render(Number(id), pathIDs);
+    const newImgBase64 = await aiModel(renderedImg.base64);
     const paths = await vectorizeBase64(newImgBase64);
     res.json(paths satisfies Path[]);
   } catch (err) {

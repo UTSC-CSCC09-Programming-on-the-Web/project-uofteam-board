@@ -1,5 +1,5 @@
 import { Model, DataTypes } from "sequelize";
-import { sequelize } from "../datasource.js";
+import { sequelize } from "../config/datasource.js";
 
 export class Boards extends Model {
   declare boardId: number;

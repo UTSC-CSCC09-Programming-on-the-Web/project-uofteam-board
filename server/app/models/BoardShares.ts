@@ -1,5 +1,5 @@
 import { Model, DataTypes } from "sequelize";
-import { sequelize } from "../datasource.js";
+import { sequelize } from "../config/datasource.js";
 import { BoardPermission } from "#types/api.js";
 import { Boards } from "./Boards.js";
 import { Users } from "./Users.js";
