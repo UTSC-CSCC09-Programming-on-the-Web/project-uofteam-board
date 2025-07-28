@@ -41,7 +41,7 @@ usersRouter.get("/login/callback", async (req, res) => {
       return;
     }
   }
-  res.redirect(`${links.clientUrl}/${paid ? 'dashboard' : 'account'}`);
+  res.redirect(`${links.clientUrl}/${paid ? "dashboard" : "account"}`);
 });
 
 usersRouter.get("/login", async (req, res) => {

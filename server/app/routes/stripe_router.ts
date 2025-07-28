@@ -7,7 +7,6 @@ import { UrlLink } from "#types/api.js";
 import { create_checkout_session } from "#stripe/checkout.js";
 const stripe = new Stripe(process.env.STRIPE_API_SECRET as string);
 
-
 export const stripeRouter = Router();
 export const stripeWebhook = Router();
 

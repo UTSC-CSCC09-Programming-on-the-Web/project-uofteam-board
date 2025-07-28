@@ -4,12 +4,10 @@ import AsyncLock from "async-lock";
 import { UrlLink, User } from "#types/api.js";
 const stripe = new Stripe(process.env.STRIPE_API_SECRET as string);
 
-
 const SUBSCRIPTION_PRICE_ID = "price_1RovPKCuibBrJj0egxj3LP9J";
 
 const checkoutLock = new AsyncLock();
 export const create_checkout_session = async (user: User): Promise<UrlLink | null> => {
-
   const stripeCustomer = await StripeCustomers.findByPk(user.id);
   if (stripeCustomer?.status === "active") {
     return null;
@@ -20,8 +18,10 @@ export const create_checkout_session = async (user: User): Promise<UrlLink | nul
     if (stripeCustomer?.checkoutId) {
       const existingSession = await stripe.checkout.sessions.retrieve(stripeCustomer.checkoutId);
       if (existingSession.status === "open") {
-        console.log(`User ${stripeCustomer.userId} already has an open Checkout Session `
-          + `${existingSession.id}. Redirecting to existing session.`);
+        console.log(
+          `User ${stripeCustomer.userId} already has an open Checkout Session ` +
+            `${existingSession.id}. Redirecting to existing session.`,
+        );
         return { url: existingSession.url };
       }
     }
@@ -72,5 +72,5 @@ export const create_checkout_session = async (user: User): Promise<UrlLink | nul
   });
 
   if (!result?.url) throw new Error(`Failed to get a checkout session for user ${user}`);
-  return { url: result.url } satisfies UrlLink
-}
+  return { url: result.url } satisfies UrlLink;
+};
