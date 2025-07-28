@@ -52,3 +52,20 @@ export const computeTransformCentered = (from: BoundingBox, to: BoundingBox): Tr
   const dy = to.y + (to.height - from.height * scale) / 2 - from.y * scale;
   return { scale, dx, dy };
 };
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export interface StartEndPoint {
+  start: Point;
+  end: Point;
+}
+
+export const startEndPointToBoundingBox = (point: StartEndPoint): BoundingBox => ({
+  x: Math.min(point.start.x, point.end.x),
+  y: Math.min(point.start.y, point.end.y),
+  width: Math.abs(point.start.x - point.end.x),
+  height: Math.abs(point.start.y - point.end.y),
+});
