@@ -3,7 +3,7 @@ import { StripeCustomers } from "#models/StripeCustomers.js";
 import { BoardPermission, User } from "#types/api.js";
 import { Request, Response, NextFunction } from "express";
 
-async function checkPaid(userId: number): Promise<boolean> {
+export async function checkPaid(userId: number): Promise<boolean> {
   const stripeCustomer = await StripeCustomers.findByPk(userId);
   return stripeCustomer?.status === "active";
 }

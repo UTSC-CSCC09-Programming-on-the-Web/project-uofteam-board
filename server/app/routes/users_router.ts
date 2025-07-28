@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { Users } from "#models/Users.js";
 import type { UrlLink, User } from "#types/api.js";
-import { checkAuth } from "#middleware/checkAuth.js";
+import { checkAuth, checkPaid } from "#middleware/checkAuth.js";
 import { getGoogleAuth, authParams, links } from "#oauth/googleoauth.js";
 
 export const usersRouter = Router();
@@ -27,10 +27,11 @@ usersRouter.get("/login/callback", async (req, res) => {
     id: user.userId,
     email: user.email,
     name: user.name,
-    paid: false,
+    paid: await checkPaid(user.userId),
   };
-
-  res.redirect(`${links.clientUrl}/dashboard`);
+  
+  const paid = req.session.user.paid;
+  res.redirect(`${links.clientUrl}/${paid ? 'dashboard' : 'account'}`);
 });
 
 usersRouter.get("/login", async (req, res) => {
