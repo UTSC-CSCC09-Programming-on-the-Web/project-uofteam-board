@@ -44,10 +44,6 @@ const io = new Server(server, {
   cors: corsConfig,
   path: "/ws/",
 });
-// io.use((socket, next) => {
-//   console.log(`New socket connection: ${socket.id}`);
-//   next();
-// });
 io.engine.use(sessionMiddleware);
 registerWebSocket(io);
 

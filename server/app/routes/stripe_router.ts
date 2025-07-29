@@ -5,6 +5,7 @@ import { checkAuth } from "#middleware/checkAuth.js";
 import { StripeCustomers } from "#models/StripeCustomers.js";
 import { UrlLink } from "#types/api.js";
 import { create_checkout_session } from "#services/stripecheckout.js";
+import { disconnectUnpaidUser } from "#ws/canvas.js";
 const stripe = new Stripe(process.env.STRIPE_API_SECRET as string);
 
 export const stripeRouter = Router();
@@ -96,6 +97,7 @@ stripeWebhook.post("/webhook", express.raw({ type: "application/json" }), async 
         stripeCustomer.status = subscription.status;
         stripeCustomer.save();
       }
+      if (subscription.status !== 'active') disconnectUnpaidUser(Number(internalUserId));
 
       console.log(`User ${internalUserId} subscription status updated to: ${subscription.status}`);
       break;
@@ -120,6 +122,7 @@ stripeWebhook.post("/webhook", express.raw({ type: "application/json" }), async 
       }
       stripeCustomer.status = newStatus;
       await stripeCustomer.save();
+      if (newStatus !== 'active') disconnectUnpaidUser(stripeCustomer.userId);
 
       break;
     }
@@ -139,6 +142,7 @@ stripeWebhook.post("/webhook", express.raw({ type: "application/json" }), async 
       }
       stripeCustomer.status = "deleted";
       await stripeCustomer.save();
+      disconnectUnpaidUser(stripeCustomer.userId);
       console.log(
         `Subscription Deleted for Customer ID: ${deletedCustomerId}, Subscription ID: ${deletedSubscriptionId}`,
       );

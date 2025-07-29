@@ -7,6 +7,7 @@ import util from "util";
 import { Boards } from "#models/Boards.js";
 import { forceNewCachePreview } from "#services/cachepreview.js";
 
+let socketio: Server | null = null;
 
 const onUpdate = async (
   data: ClientBoardUpdate,
@@ -73,6 +74,8 @@ const initialLoad = async (boardId: string): Promise<ServerBoardUpdate | null> =
 };
 
 export const registerWebSocket = (io: Server) => {
+  socketio = io;  // Save to use for kicking
+
   io.on("connection", async (socket: Socket) => {
     const req = socket.request as express.Request;
     const session = req.session;
@@ -82,7 +85,7 @@ export const registerWebSocket = (io: Server) => {
     console.log(util.inspect(session.user, false, null));
 
     let userAuth: BoardPermission | null = null;
-    if (!boardId || !session.user || !(userAuth = await checkCanvasAuth(boardId, session.user))) {
+    if (!boardId || !session.user || !session.user.paid || !(userAuth = await checkCanvasAuth(boardId, session.user))) {
       console.log(`Bad socket request found for socket: ${socket.id}`);
       socket.disconnect();
       return;
@@ -90,6 +93,7 @@ export const registerWebSocket = (io: Server) => {
 
     // Join the room for the board
     console.log(`Client ${socket.id} joining board room: ${boardId}`);
+    socket.userData = session.user;
     socket.join(boardId);
 
     socket.on("disconnect", (reason) => {
@@ -100,8 +104,8 @@ export const registerWebSocket = (io: Server) => {
     });
 
     socket.on("update", async (data) => {
-      if (userAuth === 'viewer') return;
-      
+      if (userAuth === 'viewer' || !socket.userData?.paid) return;
+
       onUpdate(data satisfies ClientBoardUpdate, Number(boardId))
         .then((update) => {
           if (update) {
@@ -114,8 +118,26 @@ export const registerWebSocket = (io: Server) => {
     });
 
     const initialData = await initialLoad(boardId);
-    if (initialData) {
+    if (initialData && !socket.userData?.paid) {
       io.to(socket.id).emit("update", initialData);
     }
   });
 };
+
+export const disconnectUnpaidUser = async (userId: number) => {
+  if (socketio === null) throw Error("Cannot kick users before registering web socket!");
+
+  for (const [id, connectedSocket] of socketio.sockets.sockets) {
+    if (!connectedSocket.userData) {
+      connectedSocket.disconnect(true);
+      continue;
+    }
+    if (connectedSocket.userData.id === userId) {
+      connectedSocket.userData.paid = false;
+      socketio.to(id).emit("DC", "You have been disconnected due to failure of payment.")
+
+      // Prevent automatic reconnection
+      connectedSocket.disconnect(true);
+    }
+  }
+}
