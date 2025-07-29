@@ -5,4 +5,5 @@ export * from "./Dialog";
 export * from "./Header";
 export * from "./Select";
 export * from "./Spinner";
+export * from "./Tooltip";
 export * from "./TextInput";

@@ -69,3 +69,19 @@ export const startEndPointToBoundingBox = (point: StartEndPoint): BoundingBox =>
   width: Math.abs(point.start.x - point.end.x),
   height: Math.abs(point.start.y - point.end.y),
 });
+
+export const makeLineData = (prevData: string | null, { x, y }: Point) =>
+  prevData ? `${prevData} L ${x} ${y}` : `M ${x} ${y} L ${x} ${y}`;
+
+export const makeRectData = (points: StartEndPoint) => {
+  const { x, y, width, height } = startEndPointToBoundingBox(points);
+  return `M ${x} ${y} L ${x + width} ${y} L ${x + width} ${y + height} L ${x} ${y + height} Z`;
+};
+
+export const makeCircleData = (points: StartEndPoint) => {
+  const { x, y, width, height } = startEndPointToBoundingBox(points);
+  const radiusX = width / 2;
+  const radiusY = height / 2;
+  const centerX = x + radiusX;
+  return `M ${centerX} ${y} A ${radiusX} ${radiusY} 0 1 1 ${centerX} ${y + height} A ${radiusX} ${radiusY} 0 1 1 ${centerX} ${y}`;
+};
