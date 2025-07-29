@@ -151,12 +151,20 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
 
   useEffect(() => {
     if (!board) return;
+    let firstLoad = true;
     return API.listenForBoardUpdates(
       board.id,
       (update) => {
         switch (update.type) {
           case "CREATE_OR_REPLACE_PATHS":
             setPaths((prev) => {
+              if (firstLoad) {
+                // On the first load, we replace the paths
+                // so that we are in sync with the server.
+                firstLoad = false;
+                return update.paths;
+              }
+
               const prevCopy = [...prev];
               update.paths.forEach((newPath) => {
                 const existingIndex = prevCopy.findIndex((p) => p.id === newPath.id);
