@@ -13,7 +13,7 @@ import color from "color";
 
 import type { Route } from "./+types/EditBoard";
 import type { Board, BoardShare, Path } from "~/types";
-import { Button, ColorPicker, Spinner } from "~/components";
+import { Button, ColorPicker, Spinner, Tooltip } from "~/components";
 import { API } from "~/services";
 
 import { HelpDialog } from "./HelpDialog";
@@ -465,14 +465,16 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
             <div className="flex items-center gap-2 pointer-events-auto">
               {selectedIDs.length > 0 ? (
                 <Fragment key="selected-actions">
-                  <Button
-                    size="sm"
-                    title="Delete"
-                    variant="danger"
-                    icon={<MdDelete />}
-                    className="!w-10 !px-0"
-                    onClick={handleDelete}
-                  />
+                  <Tooltip text="Delete" position="bottom">
+                    <Button
+                      size="sm"
+                      title="Delete"
+                      variant="danger"
+                      icon={<MdDelete />}
+                      className="!w-10 !px-0"
+                      onClick={handleDelete}
+                    />
+                  </Tooltip>
                   <Button
                     size="sm"
                     title="Delete"
@@ -488,64 +490,71 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
                 </Fragment>
               ) : (
                 <Fragment key="no-selection-actions">
-                  <Button
-                    size="sm"
-                    title="Pen tool"
-                    variant={tool === "PEN" ? "primary" : "neutral"}
-                    onClick={() => setTool("PEN")}
-                    icon={<RiPenNibLine />}
-                    className="!w-10 !px-0"
-                  />
-                  <Button
-                    size="sm"
-                    title="Rectangle tool"
-                    variant={tool === "RECTANGLE" ? "primary" : "neutral"}
-                    onClick={() => setTool("RECTANGLE")}
-                    icon={<MdOutlineRectangle />}
-                    className="!w-10 !px-0"
-                  />
-                  <Button
-                    size="sm"
-                    title="Circle tool"
-                    variant={tool === "CIRCLE" ? "primary" : "neutral"}
-                    onClick={() => setTool("CIRCLE")}
-                    icon={<MdOutlineCircle />}
-                    className="!w-10 !px-0"
-                  />
-                  <Button
-                    size="sm"
-                    title="Selection tool"
-                    variant={tool === "SELECTION" ? "primary" : "neutral"}
-                    onClick={() => setTool("SELECTION")}
-                    icon={<PiRectangleDashedDuotone />}
-                    className="!w-10 !px-0"
-                  />
+                  <Tooltip text="Pen" position="bottom">
+                    <Button
+                      size="sm"
+                      variant={tool === "PEN" ? "primary" : "neutral"}
+                      onClick={() => setTool("PEN")}
+                      icon={<RiPenNibLine />}
+                      className="!w-10 !px-0"
+                    />
+                  </Tooltip>
+                  <Tooltip text="Rectangle" position="bottom">
+                    <Button
+                      size="sm"
+                      variant={tool === "RECTANGLE" ? "primary" : "neutral"}
+                      onClick={() => setTool("RECTANGLE")}
+                      icon={<MdOutlineRectangle />}
+                      className="!w-10 !px-0"
+                    />
+                  </Tooltip>
+                  <Tooltip text="Circle" position="bottom">
+                    <Button
+                      size="sm"
+                      variant={tool === "CIRCLE" ? "primary" : "neutral"}
+                      onClick={() => setTool("CIRCLE")}
+                      icon={<MdOutlineCircle />}
+                      className="!w-10 !px-0"
+                    />
+                  </Tooltip>
+                  <Tooltip text="Select" position="bottom">
+                    <Button
+                      size="sm"
+                      variant={tool === "SELECTION" ? "primary" : "neutral"}
+                      onClick={() => setTool("SELECTION")}
+                      icon={<PiRectangleDashedDuotone />}
+                      className="!w-10 !px-0"
+                    />
+                  </Tooltip>
                   {tool !== "SELECTION" && (
                     <>
-                      <Button
-                        size="sm"
-                        variant="neutral"
-                        title="Stroke width"
-                        onClick={() => setStrokeWidthIndex((i) => (i + 1) % strokeWidthOptions.length)} // prettier-ignore
-                        className="!w-16 !px-0"
-                      >
-                        {strokeWidthOptions[strokeWidthIndex]}px
-                      </Button>
-                      <ColorPicker
-                        title="Stroke color"
-                        value={strokeColor}
-                        onChange={setStrokeColor}
-                        popoverClassName="!mt-4"
-                      />
+                      <Tooltip text="Stroke width" position="bottom">
+                        <Button
+                          size="sm"
+                          variant="neutral"
+                          onClick={() => setStrokeWidthIndex((i) => (i + 1) % strokeWidthOptions.length)} // prettier-ignore
+                          className="!w-16 !px-0"
+                        >
+                          {strokeWidthOptions[strokeWidthIndex]}px
+                        </Button>
+                      </Tooltip>
+                      <Tooltip text="Stroke color" position="bottom">
+                        <ColorPicker
+                          value={strokeColor}
+                          onChange={setStrokeColor}
+                          popoverClassName="!mt-4"
+                        />
+                      </Tooltip>
                     </>
                   )}
                   {(["RECTANGLE", "CIRCLE"] satisfies Tool[] as Tool[]).includes(tool) && (
-                    <ColorPicker
-                      title="Fill color"
-                      value={fillColor}
-                      onChange={setFillColor}
-                      popoverClassName="!mt-4"
-                    />
+                    <Tooltip text="Fill color" position="bottom">
+                      <ColorPicker
+                        value={fillColor}
+                        onChange={setFillColor}
+                        popoverClassName="!mt-4"
+                      />
+                    </Tooltip>
                   )}
                 </Fragment>
               )}
@@ -555,24 +564,22 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
       </div>
       <div className="fixed bottom-0 left-0 right-0 z-10 p-4 flex justify-between pointer-events-none">
         <div className="flex gap-2 pointer-events-auto">
-          <Button
-            size="sm"
-            title="Zoom in"
-            onClick={handleZoomIn}
-            variant="neutral"
-            className="!w-10"
-          >
-            +
-          </Button>
-          <Button
-            size="sm"
-            title="Zoom out"
-            onClick={handleZoomOut}
-            variant="neutral"
-            className="!w-10"
-          >
-            -
-          </Button>
+          <Tooltip text="Zoom in">
+            <Button size="sm" onClick={handleZoomIn} variant="neutral" className="!w-10">
+              +
+            </Button>
+          </Tooltip>
+          <Tooltip text="Zoom out">
+            <Button
+              size="sm"
+              title="Zoom out"
+              onClick={handleZoomOut}
+              variant="neutral"
+              className="!w-10"
+            >
+              -
+            </Button>
+          </Tooltip>
         </div>
         <div className="flex gap-2 pointer-events-auto">
           <Button
