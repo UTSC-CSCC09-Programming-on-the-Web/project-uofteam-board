@@ -16,7 +16,7 @@ class ApiService {
     });
   }
 
-  public getLoginRedirectUrl(): Promise<Response<UrlLink>> {
+  public getLoginRedirectURL(): Promise<Response<UrlLink>> {
     return this.get("/auth/login");
   }
 
