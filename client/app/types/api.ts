@@ -4,6 +4,10 @@ export type Response<T = null> =
 
 export type BoardPermission = "owner" | "editor" | "viewer";
 
+export interface UrlLink {
+  url: string;
+}
+
 export interface Board {
   id: number;
   name: string;
@@ -16,6 +20,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  paid: boolean;
 }
 
 export interface BoardShare {

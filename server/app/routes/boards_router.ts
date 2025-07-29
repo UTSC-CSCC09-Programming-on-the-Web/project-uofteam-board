@@ -16,7 +16,7 @@ const PREVIEW_CACHE_DURATION = 60 * 60 * 24 // 24 hours
 export const boardsRouter = express.Router();
 
 
-boardsRouter.post("/", checkAuth, async (req, res) => {
+boardsRouter.post("/", checkAuth(), async (req, res) => {
   const { name } = req.body;
   if (!name) {
     res.status(400).json({ error: "Board name is required" });
@@ -39,7 +39,7 @@ boardsRouter.post("/", checkAuth, async (req, res) => {
   } satisfies Board);
 });
 
-boardsRouter.get("/", checkAuth, async (req, res) => {
+boardsRouter.get("/", checkAuth(), async (req, res) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 8;
   const query = (req.query.query as string) || "";
@@ -85,7 +85,7 @@ boardsRouter.get("/", checkAuth, async (req, res) => {
   } satisfies Paginated<Board>);
 });
 
-boardsRouter.get("/:id", checkAuth, async (req, res) => {
+boardsRouter.get("/:id", checkAuth(), async (req, res) => {
   const { id } = req.params;
   const board = await BoardShares.findOne({
     where: {
@@ -132,7 +132,7 @@ const getCachedPreview = async (boardId: string): Promise<RenderedImage | null> 
   })
 }
 
-boardsRouter.get("/:id/picture", checkAuth, async (req, res) => {
+boardsRouter.get("/:id/picture", checkAuth(), async (req, res) => {
   const { id } = req.params;
   const board = await BoardShares.findOne({
     where: {
@@ -153,7 +153,7 @@ boardsRouter.get("/:id/picture", checkAuth, async (req, res) => {
   res.send(imgBuffer);
 });
 
-boardsRouter.patch("/:id", checkAuth, async (req, res) => {
+boardsRouter.patch("/:id", checkAuth(), async (req, res) => {
   const ALLOWED: BoardPermission[] = ["owner", "editor"];
   const { name } = req.body;
   const { id } = req.params;
@@ -191,7 +191,7 @@ boardsRouter.patch("/:id", checkAuth, async (req, res) => {
   } satisfies Board);
 });
 
-boardsRouter.delete("/:id", checkAuth, async (req, res) => {
+boardsRouter.delete("/:id", checkAuth(), async (req, res) => {
   const ALLOWED: BoardPermission[] = ["owner"];
   const { id } = req.params;
 
@@ -223,7 +223,7 @@ boardsRouter.delete("/:id", checkAuth, async (req, res) => {
   } satisfies Board);
 });
 
-boardsRouter.post("/:id/generative-fill", checkAuth, async (req, res) => {
+boardsRouter.post("/:id/generative-fill", checkAuth(), async (req, res) => {
   const { pathIDs } = req.body;
   const { id } = req.params;
   if (!id || !(await Boards.findByPk(id))) {

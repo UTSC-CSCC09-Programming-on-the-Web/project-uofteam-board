@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { MdArrowBack, MdDelete, MdHelpOutline, MdSettings } from "react-icons/md";
 import { Stage, Layer, Rect, Path as KonvaPath, Transformer } from "react-konva";
 import { FaWandMagicSparkles, FaFileExport } from "react-icons/fa6";
 import { PiRectangleDashedDuotone } from "react-icons/pi";
 import { RiPenNibLine } from "react-icons/ri";
+import { useNavigate } from "react-router";
 import colors from "tailwindcss/colors";
 import { v4 as uuid } from "uuid";
 import Konva from "konva";
@@ -13,21 +13,19 @@ import color from "color";
 
 import type { Route } from "./+types/EditBoard";
 import type { Board, BoardShare, Path } from "~/types";
-import { Button, Spinner } from "~/components";
+import { Button, ColorPicker, Spinner } from "~/components";
 import { API } from "~/services";
 
-import { useSpacePressed } from "./useSpacePressed";
-import { GenFillDialog, type GenFillDialogState } from "./GenFillDialog";
-import { ColorPicker } from "./ColorPicker";
 import { HelpDialog } from "./HelpDialog";
-import { SettingsDialog } from "./SettingsDialog";
-import { computeBoundingBox } from "./utils";
-import { useWindowSize } from "./useWindowSize";
 import { ExportDialog } from "./ExportDialog";
+import { SettingsDialog } from "./SettingsDialog";
+import { GenFillDialog, type GenFillDialogState } from "./GenFillDialog";
+import { computeBoundingBox, startEndPointToBoundingBox, type BoundingBox, type Point, type StartEndPoint } from "./utils"; // prettier-ignore
+import { useSpacePressed } from "./useSpacePressed";
+import { useMousePressed } from "./useMousePressed";
+import { useWindowSize } from "./useWindowSize";
 
-export function meta() {
-  return [{ title: "Edit Board" }];
-}
+const meta: Route.MetaFunction = () => [{ title: "Edit Board" }];
 
 interface PathWithLocal extends Path {
   // fromLocal is used to indicate if the path was created locally. This is done
@@ -35,11 +33,6 @@ interface PathWithLocal extends Path {
   // the same path, we know to move the local path to the end of the list.
   // Otherwise, different clients might have different orders of paths.
   fromLocal?: boolean;
-}
-
-interface Point {
-  x: number;
-  y: number;
 }
 
 type BoardState =
@@ -56,11 +49,15 @@ type BoardState =
 
 type Tool = "SELECTION" | "PEN";
 
-export default function EditBoard({ params }: Route.ComponentProps) {
+const EditBoard = ({ params }: Route.ComponentProps) => {
   const navigate = useNavigate();
+  const mousePressed = useMousePressed();
   const spacePressed = useSpacePressed();
   const [board, setBoard] = useState<Board | null>(null);
   const [shares, setShares] = useState<BoardShare[]>([]);
+  const selectionRectRef = useRef<Konva.Rect | null>(null);
+  const selectionRectDataRef = useRef<StartEndPoint | null>(null);
+  const currentPathDataRef = useRef<Path | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [fillColor, setFillColor] = useState("#fff085");
@@ -72,7 +69,6 @@ export default function EditBoard({ params }: Route.ComponentProps) {
 
   const [tool, setTool] = useState<Tool>("PEN");
   const [selectedIDs, setSelectedIDs] = useState<string[]>([]);
-  const [selectionRect, setSelectionRect] = useState<null | { start: Point; end: Point }>(null);
   const pathRefs = useRef<Map<string, Konva.Path>>(new Map());
   const transformerRef = useRef<Konva.Transformer>(null);
 
@@ -190,15 +186,20 @@ export default function EditBoard({ params }: Route.ComponentProps) {
     let newPath: PathWithLocal;
     switch (tool) {
       case "SELECTION":
-        if (e.target !== stage) return;
+        if (e.target !== stage || !selectionRectRef.current) return;
         boardStateRef.current = { type: "SELECTING" };
-        setSelectionRect({ start: ptr, end: ptr });
+        const bbox: BoundingBox = { x, y, width: 0, height: 0 };
+        selectionRectDataRef.current = { start: { x, y }, end: { x, y } };
+        selectionRectRef.current.setPosition(bbox);
+        selectionRectRef.current.setSize(bbox);
+        selectionRectRef.current.show();
         break;
 
       case "PEN":
         newPath = { ...commonPathProps, d: `M ${x} ${y} L ${x} ${y}`, fillColor: "transparent" };
         boardStateRef.current = { type: "DRAWING_FREEHAND", pathID: newPath.id };
         setPaths((prevPaths) => [...prevPaths, newPath]);
+        currentPathDataRef.current = newPath;
         break;
 
       default:
@@ -220,20 +221,22 @@ export default function EditBoard({ params }: Route.ComponentProps) {
 
     switch (bs.type) {
       case "SELECTING":
-        if (!selectionRect) return;
-        setSelectionRect({ ...selectionRect, end: ptr });
+        if (!selectionRectRef.current || !selectionRectDataRef.current) return;
+        const startEndPoint = { ...selectionRectDataRef.current, end: ptr };
+        const bbox = startEndPointToBoundingBox(startEndPoint);
+        selectionRectRef.current.setPosition(bbox);
+        selectionRectRef.current.setSize(bbox);
+        selectionRectDataRef.current = startEndPoint;
         break;
 
       case "DRAWING_FREEHAND":
-        setPaths((prevPaths) => {
-          const paths = [...prevPaths];
-          const pathIndex = paths.findIndex((p) => p.id === bs.pathID);
-          if (pathIndex === -1) return prevPaths;
-          const path = paths[pathIndex];
-          const newD = `${path.d} L ${x} ${y}`;
-          paths[pathIndex] = { ...path, d: newD };
-          return paths;
-        });
+        if (!currentPathDataRef.current) return;
+        const pathData = currentPathDataRef.current;
+        const path = pathRefs.current.get(pathData.id);
+        if (!path) return;
+        pathData.d = `${pathData.d} L ${x} ${y}`;
+        path.setAttr("data", pathData.d);
+        currentPathDataRef.current = pathData;
         break;
 
       default:
@@ -249,25 +252,25 @@ export default function EditBoard({ params }: Route.ComponentProps) {
     const stage = e.target.getStage();
     if (!stage) return;
 
+    const ptr = stage.getRelativePointerPosition();
+    if (!ptr) return;
+    const { x, y } = ptr;
+
     switch (bs.type) {
       case "SELECTING":
-        if (!selectionRect) return;
-        setSelectionRect(null);
-
-        const selBox = {
-          x: Math.min(selectionRect.start.x, selectionRect.end.x),
-          y: Math.min(selectionRect.start.y, selectionRect.end.y),
-          width: Math.abs(selectionRect.start.x - selectionRect.end.x),
-          height: Math.abs(selectionRect.start.y - selectionRect.end.y),
-        };
-
+        if (!selectionRectRef.current || !selectionRectDataRef.current) return;
+        selectionRectRef.current.hide();
+        const selBox = startEndPointToBoundingBox(selectionRectDataRef.current);
         const selected = paths.filter((x) => Konva.Util.haveIntersection(selBox, computeBoundingBox([x]))); // prettier-ignore
         setSelectedIDs(selected.map((x) => x.id));
         break;
 
       case "DRAWING_FREEHAND":
-        const path = paths.find((p) => p.id === bs.pathID);
-        if (path) API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [path] }); // prettier-ignore
+        if (!currentPathDataRef.current) return;
+        const pathData = currentPathDataRef.current;
+        currentPathDataRef.current = null;
+        pathData.d = `${pathData.d} L ${x} ${y}`;
+        API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [pathData] });
         break;
 
       default:
@@ -361,6 +364,43 @@ export default function EditBoard({ params }: Route.ComponentProps) {
     setShares(shares);
   };
 
+  const handleDelete = useCallback(() => {
+    if (selectedIDs.length === 0) return;
+    setPaths((prev) => prev.filter((path) => !selectedIDs.includes(path.id)));
+    API.emitBoardUpdate(params.bid, { type: "DELETE_PATHS", ids: selectedIDs });
+    setSelectedIDs([]);
+  }, [selectedIDs, params.bid]);
+
+  const handleExport = useCallback(() => {
+    if (selectedIDs.length === 0) return;
+    const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
+    setPathsForExport(selectedPaths);
+    setSelectedIDs([]);
+  }, [selectedIDs, paths]);
+
+  const handleGenerativeFill = useCallback(() => {
+    if (selectedIDs.length === 0) return;
+    const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
+    setGenFillState({ boardID: params.bid, paths: selectedPaths });
+    setSelectedIDs([]);
+  }, [selectedIDs, paths, params.bid]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      e.preventDefault();
+      if (e.key === "Delete" || e.key === "Backspace") {
+        handleDelete();
+      } else if (e.key === "Escape") {
+        setSelectedIDs([]);
+        selectionRectRef.current?.hide();
+        selectionRectDataRef.current = null;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleDelete]);
+
   if (!board) {
     return (
       <div className="fixed inset-0 flex justify-center items-center text-yellow-700/60 bg-yellow-50">
@@ -393,45 +433,30 @@ export default function EditBoard({ params }: Route.ComponentProps) {
           {(board.permission === "owner" || board.permission === "editor") && (
             <div className="flex items-center gap-2 pointer-events-auto">
               {selectedIDs.length > 0 ? (
-                <>
+                <Fragment key="selected-actions">
                   <Button
                     size="sm"
                     title="Delete"
                     variant="danger"
                     icon={<MdDelete />}
                     className="!w-10 !px-0"
-                    onClick={() => {
-                      setPaths((prev) => prev.filter((path) => !selectedIDs.includes(path.id)));
-                      API.emitBoardUpdate(params.bid, { type: "DELETE_PATHS", ids: selectedIDs });
-                      setSelectedIDs([]);
-                    }}
+                    onClick={handleDelete}
                   />
                   <Button
                     size="sm"
                     title="Delete"
                     variant="neutral"
                     icon={<FaFileExport />}
-                    onClick={() => {
-                      setPathsForExport(paths.filter((p) => selectedIDs.includes(p.id)));
-                      setSelectedIDs([]);
-                    }}
+                    onClick={handleExport}
                   >
                     Export
                   </Button>
-                  <Button
-                    size="sm"
-                    icon={<FaWandMagicSparkles />}
-                    onClick={() => {
-                      const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
-                      setGenFillState({ boardID: params.bid, paths: selectedPaths });
-                      setSelectedIDs([]);
-                    }}
-                  >
+                  <Button size="sm" icon={<FaWandMagicSparkles />} onClick={handleGenerativeFill}>
                     Generative Fill
                   </Button>
-                </>
+                </Fragment>
               ) : (
-                <>
+                <Fragment key="no-selection-actions">
                   <Button
                     size="sm"
                     title="Pen tool"
@@ -453,7 +478,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
                     onChange={setStrokeColor}
                     popoverClassName="!mt-4 !-right-3"
                   />
-                </>
+                </Fragment>
               )}
             </div>
           )}
@@ -550,6 +575,12 @@ export default function EditBoard({ params }: Route.ComponentProps) {
         onMouseUp={handleMouseUp}
         onWheel={handleWheel}
         draggable={spacePressed}
+        className={clsx({
+          "cursor-grab": spacePressed && !mousePressed,
+          "cursor-grabbing": spacePressed && mousePressed,
+          "cursor-crosshair": tool === "PEN" && !spacePressed,
+          "cursor-default": tool === "SELECTION" && !spacePressed,
+        })}
       >
         <Layer>
           {paths.map((path) => {
@@ -582,19 +613,15 @@ export default function EditBoard({ params }: Route.ComponentProps) {
             );
           })}
           <Transformer ref={transformerRef} shouldOverdrawWholeArea />
-          {selectionRect && (
-            <Rect
-              x={Math.min(selectionRect.start.x, selectionRect.end.x)}
-              y={Math.min(selectionRect.start.y, selectionRect.end.y)}
-              width={Math.abs(selectionRect.start.x - selectionRect.end.x)}
-              height={Math.abs(selectionRect.start.y - selectionRect.end.y)}
-              fill={colors.blue["600"]}
-              stroke={colors.blue["600"]}
-              strokeWidth={3}
-              dash={[5, 5]}
-              opacity={0.2}
-            />
-          )}
+          <Rect
+            ref={selectionRectRef}
+            fill={colors.blue["400"]}
+            stroke={colors.blue["700"]}
+            strokeScaleEnabled={false}
+            strokeWidth={4}
+            dash={[8, 8]}
+            opacity={0.2}
+          />
         </Layer>
       </Stage>
       <GenFillDialog
@@ -613,4 +640,7 @@ export default function EditBoard({ params }: Route.ComponentProps) {
       <HelpDialog open={helpDialogOpen} onClose={() => setHelpDialogOpen(false)} />
     </>
   );
-}
+};
+
+export default EditBoard;
+export { meta };

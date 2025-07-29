@@ -3,7 +3,7 @@ import { HexAlphaColorPicker } from "react-colorful";
 import { useDebouncedCallback } from "use-debounce";
 import clsx from "clsx";
 
-import { Button } from "~/components";
+import { Button } from "../Button";
 import styles from "./ColorPicker.module.css";
 
 type ColorPickerSize = "sm" | "md";
@@ -56,8 +56,8 @@ function ColorPicker({ value, onChange, size = "md", popoverClassName }: ColorPi
         <div
           ref={popoverRef}
           className={clsx(
-            "mt-1 absolute right-0 z-10 rounded p-4 bg-white shadow-[4px_4px] shadow-gray-500/30",
-            "border-2 border-gray-700 rounded-tl-[25px_5px] rounded-tr-[5px_25px] rounded-br-[50px_10px] rounded-bl-[50px_10px]",
+            "mt-1 absolute right-0 z-10 rounded p-4 bg-white offset-shadow-lg shadow-gray-500/30",
+            "border-2 border-gray-700 rounded-organic-md",
             popoverClassName,
           )}
         >

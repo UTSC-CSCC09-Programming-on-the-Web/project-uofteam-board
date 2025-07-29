@@ -3,6 +3,6 @@ import { User } from "./api.js";
 
 declare module "express-session" {
   interface SessionData {
-    user?: User;
+    user?: User & { paid: boolean };
   }
 }

@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
-import type { Board, Paginated, ServerBoardUpdate, Response, User, ClientBoardUpdate, Path, BoardShare, BoardShareUpdate } from "~/types"; // prettier-ignore
+import type { Board, Paginated, ServerBoardUpdate, Response, User, ClientBoardUpdate, Path, BoardShare, BoardShareUpdate, UrlLink } from "~/types"; // prettier-ignore
 import { config } from "~/config";
 
 class ApiService {
@@ -16,8 +16,16 @@ class ApiService {
     });
   }
 
-  public getLoginRedirectUrl(): string {
-    return `${this.client.defaults.baseURL}/auth/login`;
+  public getLoginRedirectUrl(): Promise<Response<UrlLink>> {
+    return this.get("/auth/login");
+  }
+
+  public createStripeCheckoutSession(): Promise<Response<UrlLink>> {
+    return this.post("/stripe/create-checkout-session");
+  }
+
+  public createStripePortalSession(): Promise<Response<UrlLink>> {
+    return this.post("/stripe/create-portal-session");
   }
 
   public postLogout(): Promise<Response<User>> {

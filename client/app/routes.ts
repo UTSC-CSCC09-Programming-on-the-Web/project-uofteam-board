@@ -5,6 +5,7 @@ export default [
   layout("./layouts/Layout.tsx", [
     route("dashboard", "./routes/Dashboard/Dashboard.tsx"),
     route("account", "./routes/Account/Account.tsx"),
+    route("checkout", "./routes/Checkout/Checkout.tsx"),
   ]),
   route("boards/:bid", "./routes/EditBoard/EditBoard.tsx"),
 ] satisfies RouteConfig;

@@ -1,4 +1,5 @@
 export * from "./Button";
+export * from "./ColorPicker";
 export * from "./Chip";
 export * from "./Dialog";
 export * from "./Header";
