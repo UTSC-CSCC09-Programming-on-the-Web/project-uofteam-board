@@ -1,4 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
+import toast from "react-hot-toast";
+
 import type { Board, BoardShare, BoardShareUpdate } from "~/types";
 import { Button, Dialog, Select, TextInput } from "~/components";
 import { API } from "~/services";
@@ -33,13 +35,13 @@ function SettingsDialog({ open, board, shares, onClose, onUpdate }: SettingsDial
     try {
       const updatedBoard = await API.renameBoard(board.id, name);
       if (updatedBoard.error !== null) {
-        alert(`Error updating board: ${updatedBoard.error}`);
+        toast(`Error updating board name:\n ${updatedBoard.error}`);
         return;
       }
 
       const updatedShares = await API.updateBoardShares(board.id, shareUpdates);
       if (updatedShares.error !== null) {
-        alert(`Error updating board shares: ${updatedShares.error}`);
+        toast(`Error updating board shares:\n ${updatedShares.error}`);
         return;
       }
 
@@ -57,7 +59,7 @@ function SettingsDialog({ open, board, shares, onClose, onUpdate }: SettingsDial
     try {
       const res = await API.shareBoard(board.id, email);
       if (res.error !== null) {
-        alert(`Error sharing board: ${res.error}`);
+        toast(`Error sharing board with :\n ${res.error}`);
         return;
       }
 
@@ -136,6 +138,9 @@ function SettingsDialog({ open, board, shares, onClose, onUpdate }: SettingsDial
         </div>
       </Dialog.Content>
       <Dialog.Footer>
+        <Dialog.Button onClick={onClose} size="sm" disabled={loading}>
+          Cancel
+        </Dialog.Button>
         <Dialog.Button onClick={handleSave} size="sm" disabled={loading} loading={submittingDialog}>
           Done
         </Dialog.Button>
