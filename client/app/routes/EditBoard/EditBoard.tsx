@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import { MdArrowBack, MdDelete, MdHelpOutline, MdSettings } from "react-icons/md";
+import { MdArrowBack, MdDelete, MdHelpOutline, MdSettings, MdOutlineRectangle, MdOutlineCircle } from "react-icons/md"; // prettier-ignore
 import { Stage, Layer, Rect, Path as KonvaPath, Transformer } from "react-konva";
 import { FaWandMagicSparkles, FaFileExport } from "react-icons/fa6";
 import { PiRectangleDashedDuotone } from "react-icons/pi";
@@ -20,7 +20,7 @@ import { HelpDialog } from "./HelpDialog";
 import { ExportDialog } from "./ExportDialog";
 import { SettingsDialog } from "./SettingsDialog";
 import { GenFillDialog, type GenFillDialogState } from "./GenFillDialog";
-import { computeBoundingBox, startEndPointToBoundingBox, type BoundingBox, type Point, type StartEndPoint } from "./utils"; // prettier-ignore
+import { computeBoundingBox, makeCircleData, makeLineData, makeRectData, startEndPointToBoundingBox, type Point, type StartEndPoint } from "./utils"; // prettier-ignore
 import { useSpacePressed } from "./useSpacePressed";
 import { useMousePressed } from "./useMousePressed";
 import { useWindowSize } from "./useWindowSize";
@@ -38,16 +38,27 @@ interface PathWithLocal extends Path {
 type BoardState =
   | {
       type: "SELECTING";
+      start: Point;
     }
   | {
       type: "DRAWING_FREEHAND";
-      pathID: string;
+      path: Path;
+    }
+  | {
+      type: "DRAWING_RECTANGLE";
+      path: Path;
+      start: Point;
+    }
+  | {
+      type: "DRAWING_CIRCLE";
+      path: Path;
+      start: Point;
     }
   | {
       type: "IDLE";
     };
 
-type Tool = "SELECTION" | "PEN";
+type Tool = "SELECTION" | "PEN" | "RECTANGLE" | "CIRCLE";
 
 const EditBoard = ({ params }: Route.ComponentProps) => {
   const navigate = useNavigate();
@@ -56,8 +67,6 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
   const [board, setBoard] = useState<Board | null>(null);
   const [shares, setShares] = useState<BoardShare[]>([]);
   const selectionRectRef = useRef<Konva.Rect | null>(null);
-  const selectionRectDataRef = useRef<StartEndPoint | null>(null);
-  const currentPathDataRef = useRef<Path | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [fillColor, setFillColor] = useState("#fff085");
@@ -166,9 +175,8 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
     const stage = e.target.getStage();
     if (!stage) return;
 
-    const ptr = stage.getRelativePointerPosition();
-    if (!ptr) return;
-    const { x, y } = ptr;
+    const point = stage.getRelativePointerPosition();
+    if (!point) return;
 
     const commonPathProps = {
       id: uuid(),
@@ -185,26 +193,36 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
 
     let newPath: PathWithLocal;
     switch (tool) {
-      case "SELECTION":
+      case "SELECTION": {
         if (e.target !== stage || !selectionRectRef.current) return;
-        boardStateRef.current = { type: "SELECTING" };
-        const bbox: BoundingBox = { x, y, width: 0, height: 0 };
-        selectionRectDataRef.current = { start: { x, y }, end: { x, y } };
-        selectionRectRef.current.setPosition(bbox);
-        selectionRectRef.current.setSize(bbox);
+        boardStateRef.current = { type: "SELECTING", start: point };
+        selectionRectRef.current.setSize({ width: 0, height: 0 });
+        selectionRectRef.current.setPosition(point);
         selectionRectRef.current.show();
         break;
-
-      case "PEN":
-        newPath = { ...commonPathProps, d: `M ${x} ${y} L ${x} ${y}`, fillColor: "transparent" };
-        boardStateRef.current = { type: "DRAWING_FREEHAND", pathID: newPath.id };
+      }
+      case "PEN": {
+        newPath = { ...commonPathProps, d: makeLineData(null, point), fillColor: "transparent" };
+        boardStateRef.current = { type: "DRAWING_FREEHAND", path: newPath };
         setPaths((prevPaths) => [...prevPaths, newPath]);
-        currentPathDataRef.current = newPath;
         break;
-
-      default:
+      }
+      case "RECTANGLE": {
+        newPath = { ...commonPathProps, d: makeRectData({ start: point, end: point }) };
+        boardStateRef.current = { type: "DRAWING_RECTANGLE", path: newPath, start: point };
+        setPaths((prevPaths) => [...prevPaths, newPath]);
+        break;
+      }
+      case "CIRCLE": {
+        newPath = { ...commonPathProps, d: makeCircleData({ start: point, end: point }) };
+        boardStateRef.current = { type: "DRAWING_CIRCLE", path: newPath, start: point };
+        setPaths((prevPaths) => [...prevPaths, newPath]);
+        break;
+      }
+      default: {
         [tool] satisfies [never];
         break;
+      }
     }
   };
 
@@ -215,33 +233,42 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
     const stage = e.target.getStage();
     if (!stage) return;
 
-    const ptr = stage.getRelativePointerPosition();
-    if (!ptr) return;
-    const { x, y } = ptr;
+    const point = stage.getRelativePointerPosition();
+    if (!point) return;
 
     switch (bs.type) {
-      case "SELECTING":
-        if (!selectionRectRef.current || !selectionRectDataRef.current) return;
-        const startEndPoint = { ...selectionRectDataRef.current, end: ptr };
-        const bbox = startEndPointToBoundingBox(startEndPoint);
+      case "SELECTING": {
+        if (!selectionRectRef.current) return;
+        const bbox = startEndPointToBoundingBox({ start: bs.start, end: point });
         selectionRectRef.current.setPosition(bbox);
         selectionRectRef.current.setSize(bbox);
-        selectionRectDataRef.current = startEndPoint;
         break;
-
-      case "DRAWING_FREEHAND":
-        if (!currentPathDataRef.current) return;
-        const pathData = currentPathDataRef.current;
-        const path = pathRefs.current.get(pathData.id);
+      }
+      case "DRAWING_FREEHAND": {
+        const path = pathRefs.current.get(bs.path.id);
         if (!path) return;
-        pathData.d = `${pathData.d} L ${x} ${y}`;
-        path.setAttr("data", pathData.d);
-        currentPathDataRef.current = pathData;
+        bs.path.d = makeLineData(bs.path.d, point);
+        path.setAttr("data", bs.path.d);
         break;
-
-      default:
+      }
+      case "DRAWING_RECTANGLE": {
+        const path = pathRefs.current.get(bs.path.id);
+        if (!path) return;
+        bs.path.d = makeRectData({ start: bs.start, end: point });
+        path.setAttr("data", bs.path.d);
+        break;
+      }
+      case "DRAWING_CIRCLE": {
+        const path = pathRefs.current.get(bs.path.id);
+        if (!path) return;
+        bs.path.d = makeCircleData({ start: bs.start, end: point });
+        path.setAttr("data", bs.path.d);
+        break;
+      }
+      default: {
         [bs] satisfies [never];
         break;
+      }
     }
   };
 
@@ -252,30 +279,37 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
     const stage = e.target.getStage();
     if (!stage) return;
 
-    const ptr = stage.getRelativePointerPosition();
-    if (!ptr) return;
-    const { x, y } = ptr;
+    const point = stage.getRelativePointerPosition();
+    if (!point) return;
 
     switch (bs.type) {
-      case "SELECTING":
-        if (!selectionRectRef.current || !selectionRectDataRef.current) return;
+      case "SELECTING": {
+        if (!selectionRectRef.current) return;
         selectionRectRef.current.hide();
-        const selBox = startEndPointToBoundingBox(selectionRectDataRef.current);
-        const selected = paths.filter((x) => Konva.Util.haveIntersection(selBox, computeBoundingBox([x]))); // prettier-ignore
+        const bbox = startEndPointToBoundingBox({ start: bs.start, end: point });
+        const selected = paths.filter((x) => Konva.Util.haveIntersection(bbox, computeBoundingBox([x]))); // prettier-ignore
         setSelectedIDs(selected.map((x) => x.id));
         break;
-
-      case "DRAWING_FREEHAND":
-        if (!currentPathDataRef.current) return;
-        const pathData = currentPathDataRef.current;
-        currentPathDataRef.current = null;
-        pathData.d = `${pathData.d} L ${x} ${y}`;
-        API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [pathData] });
+      }
+      case "DRAWING_FREEHAND": {
+        bs.path.d = makeLineData(bs.path.d, point);
+        API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [bs.path] });
         break;
-
-      default:
+      }
+      case "DRAWING_RECTANGLE": {
+        bs.path.d = makeRectData({ start: bs.start, end: point });
+        API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [bs.path] });
+        break;
+      }
+      case "DRAWING_CIRCLE": {
+        bs.path.d = makeCircleData({ start: bs.start, end: point });
+        API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [bs.path] });
+        break;
+      }
+      default: {
         [bs] satisfies [never];
         break;
+      }
     }
 
     boardStateRef.current = { type: "IDLE" };
@@ -392,8 +426,6 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
         handleDelete();
       } else if (e.key === "Escape") {
         setSelectedIDs([]);
-        selectionRectRef.current?.hide();
-        selectionRectDataRef.current = null;
       }
     };
 
@@ -467,6 +499,22 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
                   />
                   <Button
                     size="sm"
+                    title="Rectangle tool"
+                    variant={tool === "RECTANGLE" ? "primary" : "neutral"}
+                    onClick={() => setTool("RECTANGLE")}
+                    icon={<MdOutlineRectangle />}
+                    className="!w-10 !px-0"
+                  />
+                  <Button
+                    size="sm"
+                    title="Circle tool"
+                    variant={tool === "CIRCLE" ? "primary" : "neutral"}
+                    onClick={() => setTool("CIRCLE")}
+                    icon={<MdOutlineCircle />}
+                    className="!w-10 !px-0"
+                  />
+                  <Button
+                    size="sm"
                     title="Selection tool"
                     variant={tool === "SELECTION" ? "primary" : "neutral"}
                     onClick={() => setTool("SELECTION")}
@@ -530,46 +578,6 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
         width={windowWidth}
         height={windowHeight}
         ref={stageRef}
-        // onDragEnd={(e) => {
-        //   const stage = e.target.getStage();
-        //   if (!stage) return;
-        //   // Define max bounds
-        //   const MAX_WIDTH = 3000;
-        //   const MAX_HEIGHT = 2000;
-        //   const scale = stage.scaleX();
-        //   let x = stage.x();
-        //   let y = stage.y();
-
-        //   // Clamp so that the visible area does not go outside [0,0] to [MAX_WIDTH, MAX_HEIGHT]
-        //   const minX = Math.min(0, width - MAX_WIDTH * scale);
-        //   const maxX = 0;
-        //   const minY = Math.min(0, height - MAX_HEIGHT * scale);
-        //   const maxY = 0;
-
-        //   x = Math.max(minX, Math.min(x, maxX));
-        //   y = Math.max(minY, Math.min(y, maxY));
-        //   stage.position({ x, y });
-        // }}
-        // onWheel={(e) => {
-        //   handleWheel(e);
-        //   const stage = stageRef.current;
-        //   if (!stage) return;
-        //   // Define max bounds
-        //   const MAX_WIDTH = 3000;
-        //   const MAX_HEIGHT = 2000;
-        //   const scale = stage.scaleX();
-        //   let x = stage.x();
-        //   let y = stage.y();
-
-        //   const minX = Math.min(0, width - MAX_WIDTH * scale);
-        //   const maxX = 0;
-        //   const minY = Math.min(0, height - MAX_HEIGHT * scale);
-        //   const maxY = 0;
-
-        //   x = Math.max(minX, Math.min(x, maxX));
-        //   y = Math.max(minY, Math.min(y, maxY));
-        //   stage.position({ x, y });
-        // }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -578,7 +586,7 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
         className={clsx({
           "cursor-grab": spacePressed && !mousePressed,
           "cursor-grabbing": spacePressed && mousePressed,
-          "cursor-crosshair": tool === "PEN" && !spacePressed,
+          "cursor-crosshair": tool !== "SELECTION" && !spacePressed,
           "cursor-default": tool === "SELECTION" && !spacePressed,
         })}
       >
