@@ -12,6 +12,19 @@ usersRouter.get("/me", checkAuth(false), async (req, res) => {
   res.json(req.session.user);
 });
 
+usersRouter.get("/me/picture", checkAuth(false), async (req, res) => {
+  const userInfo = await Users.findByPk(req.session.user?.id);
+  if (!userInfo) throw Error("Got authenticated request for non-existant user!")
+
+  const expirationDate = new Date();
+  expirationDate.setDate(expirationDate.getDate() + 1);
+
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.setHeader('Expires', expirationDate.toUTCString());     // Legacy
+
+  res.redirect(302, userInfo.pictureUrl);
+})
+
 usersRouter.get("/login/callback", async (req, res) => {
   const code = req.query.code?.toString();
   const data = await getGoogleAuth(code);
@@ -19,11 +32,11 @@ usersRouter.get("/login/callback", async (req, res) => {
     res.redirect(`${links.clientUrl}?error=auth_failed`);
     return;
   }
-  const { email, name } = data;
+  const { email, name, picture } = data;
 
   let user = await Users.findOne({ where: { email } });
   if (!user) {
-    user = await Users.create({ name, email });
+    user = await Users.create({ name, email, pictureUrl: picture });
   }
 
   const paid = await checkPaid(user.userId);

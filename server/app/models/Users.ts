@@ -5,6 +5,7 @@ export class Users extends Model {
   declare userId: number;
   declare name: string;
   declare email: string;
+  declare pictureUrl: string;
 }
 
 Users.init(
@@ -24,6 +25,10 @@ Users.init(
       allowNull: false,
       unique: true,
     },
+    pictureUrl: {
+      type: DataTypes.STRING(2048),
+      allowNull: false,
+    }
   },
   {
     sequelize,
