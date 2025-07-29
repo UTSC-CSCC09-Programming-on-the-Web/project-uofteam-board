@@ -472,7 +472,6 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      e.preventDefault();
       if (e.key === "Delete" || e.key === "Backspace") {
         handleDelete();
       } else if (e.key === "Escape") {
