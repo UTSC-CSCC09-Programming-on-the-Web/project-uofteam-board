@@ -59,6 +59,7 @@ type BoardState =
     };
 
 type Tool = "SELECTION" | "PEN" | "RECTANGLE" | "CIRCLE";
+const strokeWidthOptions = [2, 4, 8, 16];
 
 const EditBoard = ({ params }: Route.ComponentProps) => {
   const navigate = useNavigate();
@@ -69,9 +70,8 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
   const selectionRectRef = useRef<Konva.Rect | null>(null);
 
   const [fillColor, setFillColor] = useState("#fff085aa");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [strokeWidth, setStrokeWidth] = useState(4);
   const [strokeColor, setStrokeColor] = useState("#193cb8");
+  const [strokeWidthIndex, setStrokeWidthIndex] = useState(1);
   const [genFillState, setGenFillState] = useState<GenFillDialogState | null>(null);
   const [pathsForExport, setPathsForExport] = useState<Path[]>([]);
 
@@ -180,7 +180,7 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
     const commonPathProps = {
       id: uuid(),
       strokeColor,
-      strokeWidth,
+      strokeWidth: strokeWidthOptions[strokeWidthIndex],
       fillColor,
       x: 0,
       y: 0,
@@ -521,12 +521,23 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
                     className="!w-10 !px-0"
                   />
                   {tool !== "SELECTION" && (
-                    <ColorPicker
-                      title="Stroke color"
-                      value={strokeColor}
-                      onChange={setStrokeColor}
-                      popoverClassName="!mt-4"
-                    />
+                    <>
+                      <Button
+                        size="sm"
+                        variant="neutral"
+                        title="Stroke width"
+                        onClick={() => setStrokeWidthIndex((i) => (i + 1) % strokeWidthOptions.length)} // prettier-ignore
+                        className="!w-16 !px-0"
+                      >
+                        {strokeWidthOptions[strokeWidthIndex]}px
+                      </Button>
+                      <ColorPicker
+                        title="Stroke color"
+                        value={strokeColor}
+                        onChange={setStrokeColor}
+                        popoverClassName="!mt-4"
+                      />
+                    </>
                   )}
                   {(["RECTANGLE", "CIRCLE"] satisfies Tool[] as Tool[]).includes(tool) && (
                     <ColorPicker
