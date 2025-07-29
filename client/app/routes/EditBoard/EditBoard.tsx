@@ -68,7 +68,6 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
   const [shares, setShares] = useState<BoardShare[]>([]);
   const selectionRectRef = useRef<Konva.Rect | null>(null);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [fillColor, setFillColor] = useState("#fff085");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [strokeWidth, setStrokeWidth] = useState(4);
@@ -521,18 +520,22 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
                     icon={<PiRectangleDashedDuotone />}
                     className="!w-10 !px-0"
                   />
-                  <ColorPicker
-                    title="Stroke color"
-                    value={strokeColor}
-                    onChange={setStrokeColor}
-                    popoverClassName="!mt-4"
-                  />
-                  <ColorPicker
-                    title="Fill color"
-                    value={fillColor}
-                    onChange={setFillColor}
-                    popoverClassName="!mt-4 !-right-3"
-                  />
+                  {tool !== "SELECTION" && (
+                    <ColorPicker
+                      title="Stroke color"
+                      value={strokeColor}
+                      onChange={setStrokeColor}
+                      popoverClassName="!mt-4"
+                    />
+                  )}
+                  {(["RECTANGLE", "CIRCLE"] satisfies Tool[] as Tool[]).includes(tool) && (
+                    <ColorPicker
+                      title="Fill color"
+                      value={fillColor}
+                      onChange={setFillColor}
+                      popoverClassName="!mt-4"
+                    />
+                  )}
                 </Fragment>
               )}
             </div>
