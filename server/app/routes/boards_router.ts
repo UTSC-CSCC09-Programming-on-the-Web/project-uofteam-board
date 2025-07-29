@@ -124,7 +124,7 @@ const getCachedPreview = async (boardId: string): Promise<RenderedImage | null> 
       await redisClient.set(boardId, JSON.stringify(renderedImg), {
         expiration: { type: 'EX', value: PREVIEW_CACHE_DURATION }
       });
-      return previewImg;
+      return renderedImg;
     } catch (error) {
       console.error(error);
       return null;

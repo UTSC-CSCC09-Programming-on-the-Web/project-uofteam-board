@@ -73,7 +73,7 @@ export async function render(boardId: number, ids: string[] = []): Promise<Rende
   const strokes = await Strokes.findAll({
     where: {
       boardId,
-      ...(ids.length === 0 && {
+      ...(ids.length !== 0 && {
         strokeId: ids,
       })
     }
