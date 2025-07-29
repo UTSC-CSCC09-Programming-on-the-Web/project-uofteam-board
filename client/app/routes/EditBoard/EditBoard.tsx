@@ -68,7 +68,7 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
   const [shares, setShares] = useState<BoardShare[]>([]);
   const selectionRectRef = useRef<Konva.Rect | null>(null);
 
-  const [fillColor, setFillColor] = useState("#fff085");
+  const [fillColor, setFillColor] = useState("#fff085aa");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [strokeWidth, setStrokeWidth] = useState(4);
   const [strokeColor, setStrokeColor] = useState("#193cb8");
