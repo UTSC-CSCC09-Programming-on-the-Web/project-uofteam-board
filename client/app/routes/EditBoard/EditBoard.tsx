@@ -20,7 +20,7 @@ import { HelpDialog } from "./HelpDialog";
 import { ExportDialog } from "./ExportDialog";
 import { SettingsDialog } from "./SettingsDialog";
 import { GenFillDialog, type GenFillDialogState } from "./GenFillDialog";
-import { computeBoundingBox, makeCircleData, makeLineData, makeRectData, startEndPointToBoundingBox, type Point, type StartEndPoint } from "./utils"; // prettier-ignore
+import { computeBoundingBox, makeCircleData, makeLineData, makeRectData, startEndPointToBoundingBox, type Point } from "./utils"; // prettier-ignore
 import { useSpacePressed } from "./useSpacePressed";
 import { useMousePressed } from "./useMousePressed";
 import { useWindowSize } from "./useWindowSize";
