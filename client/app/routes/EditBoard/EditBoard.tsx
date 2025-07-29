@@ -310,6 +310,7 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
           setUpdateFillColorVisible(firstFillColor !== "transparent");
         } else {
           setUpdateFillColor(fillColor);
+          setUpdateFillColorVisible(true);
         }
 
         setSelectedIDs(selectedPaths.map((x) => x.id));
