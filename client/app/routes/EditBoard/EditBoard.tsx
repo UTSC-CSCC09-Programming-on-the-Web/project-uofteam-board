@@ -6,6 +6,7 @@ import { PiRectangleDashedDuotone } from "react-icons/pi";
 import { RiPenNibLine } from "react-icons/ri";
 import { useNavigate } from "react-router";
 import colors from "tailwindcss/colors";
+import toast from "react-hot-toast";
 import { v4 as uuid } from "uuid";
 import Konva from "konva";
 import clsx from "clsx";
@@ -19,6 +20,7 @@ import { API } from "~/services";
 import { HelpDialog } from "./HelpDialog";
 import { ExportDialog } from "./ExportDialog";
 import { SettingsDialog } from "./SettingsDialog";
+import { LostAccessDialog } from "./LostAccessDialog";
 import { GenFillDialog, type GenFillDialogState } from "./GenFillDialog";
 import { computeBoundingBox, makeCircleData, makeLineData, makeRectData, startEndPointToBoundingBox, type Point } from "./utils"; // prettier-ignore
 import { useSpacePressed } from "./useSpacePressed";
@@ -65,8 +67,10 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
   const navigate = useNavigate();
   const mousePressed = useMousePressed();
   const spacePressed = useSpacePressed();
+  const [boardLoading, setBoardLoading] = useState(true);
   const [board, setBoard] = useState<Board | null>(null);
   const [shares, setShares] = useState<BoardShare[]>([]);
+  const [lostAccessDialogOpen, setLostAccessDialogOpen] = useState(false);
   const selectionRectRef = useRef<Konva.Rect | null>(null);
 
   const [fillColor, setFillColor] = useState("#fff085aa");
@@ -90,29 +94,109 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const boardStateRef = useRef<BoardState>({ type: "IDLE" });
+  const latestReqID = useRef(0);
+
+  const fetchBoard = useCallback(async (reconnecting: boolean, boardID: number) => {
+    setBoardLoading(true);
+    const reqID = ++latestReqID.current;
+    const [boardRes, boardSharesRes] = await Promise.all([
+      API.getBoard(boardID),
+      API.getBoardShares(boardID),
+    ]);
+    if (reqID !== latestReqID.current) return;
+
+    for (const res of [boardRes, boardSharesRes]) {
+      if (res.error !== null) {
+        if (res.status === 401) {
+          if (reconnecting) {
+            toast("Looks like your login session has expired.");
+            setBoardLoading(false);
+          } else {
+            navigate("/?error=not_logged_in");
+          }
+        } else if (res.status === 403) {
+          toast(res.error);
+          if (reconnecting) setBoardLoading(false);
+          else navigate("/dashboard");
+        } else if (res.status === 404) {
+          toast(`Board #${boardID} does not exist, or you don't have access to it.`);
+          if (reconnecting) setBoardLoading(false);
+          else navigate("/dashboard");
+        } else {
+          toast(`Unexpected error fetching board:\n ${res.error}`);
+          setLostAccessDialogOpen(true);
+          setBoardLoading(false);
+        }
+        return;
+      }
+    }
+
+    if (boardRes.data === null || boardSharesRes.data === null) {
+      // This should never happen, but it satisfies TypeScript
+      toast("Unexpected state reached!");
+      setLostAccessDialogOpen(true);
+      setBoardLoading(false);
+      return;
+    }
+
+    setBoard(boardRes.data);
+    setShares(boardSharesRes.data);
+    setLostAccessDialogOpen(false);
+    setBoardLoading(false);
+  }, []);
 
   useEffect(() => {
-    (async () => {
-      const [boardRes, boardSharesRes] = await Promise.all([
-        API.getBoard(Number(params.bid)),
-        API.getBoardShares(Number(params.bid)),
-      ]);
+    fetchBoard(false, Number(params.bid));
+  }, [params.bid, fetchBoard]);
 
-      if (boardRes.error !== null) {
-        if (boardRes.status === 401 || boardRes.status === 403) navigate("/");
-        else alert(`Error fetching board: ${boardRes.error}`);
-        return;
-      }
+  useEffect(() => {
+    if (!board) return;
+    return API.listenForBoardUpdates(
+      board.id,
+      (update) => {
+        switch (update.type) {
+          case "CREATE_OR_REPLACE_PATHS":
+            setPaths((prev) => {
+              const prevCopy = [...prev];
+              update.paths.forEach((newPath) => {
+                const existingIndex = prevCopy.findIndex((p) => p.id === newPath.id);
+                if (existingIndex === -1) {
+                  prevCopy.push(newPath);
+                  return;
+                }
 
-      if (boardSharesRes.error !== null) {
-        alert(`Error fetching board shares: ${boardSharesRes.error}`);
-        return;
-      }
-
-      setBoard(boardRes.data);
-      setShares(boardSharesRes.data);
-    })();
-  }, [params.bid]);
+                const existingPath = prevCopy[existingIndex];
+                if (existingPath.fromLocal) {
+                  // If the existing path was created from local, we make sure to
+                  // delete it and add the new path to the end of the list. This ensures
+                  // that the paths for different clients appear in the exact same order.
+                  prevCopy.splice(existingIndex, 1);
+                  prevCopy.push(newPath);
+                } else {
+                  prevCopy[existingIndex] = newPath;
+                }
+              });
+              return prevCopy;
+            });
+            break;
+          case "DELETE_PATHS":
+            setPaths((prev) => prev.filter((path) => !update.ids.includes(path.id)));
+            break;
+          default:
+            [update] satisfies [never];
+            break;
+        }
+      },
+      () => {
+        setLostAccessDialogOpen(true);
+      },
+      (reason) => {
+        if (reason !== "io client disconnect") {
+          setLostAccessDialogOpen(true);
+        }
+      },
+    );
+  }, [board]);
 
   useEffect(() => {
     if (selectedIDs.length && transformerRef.current) {
@@ -124,53 +208,6 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
       transformerRef.current.nodes([]);
     }
   }, [selectedIDs]);
-
-  useEffect(() => {
-    return API.listenForBoardUpdates(
-      params.bid,
-      (update) => {
-        console.log("Received board update:", update);
-        switch (update.type) {
-          case "CREATE_OR_REPLACE_PATHS":
-            setPaths((prevPaths) => {
-              const prevPathsCopy = [...prevPaths];
-              update.paths.forEach((newPath) => {
-                const existingIndex = prevPathsCopy.findIndex((p) => p.id === newPath.id);
-                if (existingIndex === -1) {
-                  prevPathsCopy.push(newPath);
-                  return;
-                }
-
-                const existingPath = prevPathsCopy[existingIndex];
-                if (existingPath.fromLocal) {
-                  // If the existing path was created from local, we make sure to
-                  // delete it and add the new path to the end of the list. This ensures
-                  // that the paths for different clients appear in the exact same order.
-                  prevPathsCopy.splice(existingIndex, 1);
-                  prevPathsCopy.push(newPath);
-                } else {
-                  prevPathsCopy[existingIndex] = newPath;
-                }
-              });
-              return prevPathsCopy;
-            });
-            break;
-          case "DELETE_PATHS":
-            setPaths((prevPaths) => prevPaths.filter((path) => !update.ids.includes(path.id)));
-            break;
-          default:
-            [update] satisfies [never];
-            break;
-        }
-      },
-      (error) => {
-        alert(`Error in board updates: ${error.message}`);
-      },
-      (reason) => {
-        console.warn(`Socket closed: ${reason}`);
-      },
-    );
-  }, [params.bid]);
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (spacePressed || board === null || board.permission === "viewer") return;
@@ -486,9 +523,18 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
 
   if (!board) {
     return (
-      <div className="fixed inset-0 flex justify-center items-center text-yellow-700/60 bg-yellow-50">
-        <Spinner className="size-24 border-8" />
-      </div>
+      <>
+        <div className="fixed inset-0 flex justify-center items-center text-yellow-700/60 bg-yellow-50">
+          <Spinner className="size-24 border-8" />
+        </div>
+        <LostAccessDialog
+          beforeConnection
+          open={lostAccessDialogOpen}
+          onBack={() => navigate("/dashboard")}
+          onRetry={() => fetchBoard(true, Number(params.bid))}
+          retrying={boardLoading}
+        />
+      </>
     );
   }
 
@@ -742,6 +788,13 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
       />
       <ExportDialog paths={pathsForExport} onClose={() => setPathsForExport([])} />
       <HelpDialog open={helpDialogOpen} onClose={() => setHelpDialogOpen(false)} />
+      <LostAccessDialog
+        beforeConnection={false}
+        open={lostAccessDialogOpen}
+        onBack={() => navigate("/dashboard")}
+        onRetry={() => fetchBoard(true, Number(params.bid))}
+        retrying={boardLoading}
+      />
     </>
   );
 };

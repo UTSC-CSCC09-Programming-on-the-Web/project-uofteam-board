@@ -6,7 +6,7 @@ import { config } from "~/config";
 class ApiService {
   private readonly client: AxiosInstance;
   private socket: Socket | null = null;
-  private boardId: string | null = null;
+  private boardID: number | null = null;
 
   constructor(baseURL: string) {
     this.client = axios.create({
@@ -80,15 +80,15 @@ class ApiService {
   }
 
   public listenForBoardUpdates(
-    id: string,
+    id: number,
     onUpdate: (update: ServerBoardUpdate) => void,
     onError: (error: Error) => void,
     onClose: (reason: string) => void,
   ): () => void {
-    if (this.boardId === id) {
+    if (this.boardID === id) {
       this.socket?.disconnect();
       this.socket = null;
-      this.boardId = null;
+      this.boardID = null;
     }
 
     // Use the correct protocol and path for Socket.IO
@@ -99,13 +99,14 @@ class ApiService {
       withCredentials: true,
     });
     this.socket = socket;
-    this.boardId = id;
+    this.boardID = id;
 
     socket.on("connect", () => {
       console.log(`Socket connected for board ${id} (socket ID: ${socket.id})`);
     });
 
     socket.on("update", (update: ServerBoardUpdate) => {
+      console.log(`Received update for board ${id}:`, update);
       onUpdate(update);
     });
 
@@ -115,16 +116,16 @@ class ApiService {
     });
 
     socket.on("disconnect", (reason) => {
+      console.log(`Socket disconnected for board ${id} (reason: ${reason})`);
       this.socket = null;
-      this.boardId = null;
+      this.boardID = null;
       onClose(reason);
     });
 
     return () => {
-      console.log(`Disconnecting socket for board ${id} (socket ID: ${socket.id})`);
       socket?.disconnect();
       this.socket = null;
-      this.boardId = null;
+      this.boardID = null;
     };
   }
 
