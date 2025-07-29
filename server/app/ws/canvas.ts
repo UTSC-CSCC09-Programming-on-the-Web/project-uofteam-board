@@ -1,7 +1,7 @@
 import { Server, Socket } from "socket.io";
 import express from "express";
 import { checkCanvasAuth } from "#middleware/checkAuth.js";
-import { ClientBoardUpdate, Path, ServerBoardUpdate } from "#types/api.js";
+import { BoardPermission, ClientBoardUpdate, Path, ServerBoardUpdate } from "#types/api.js";
 import { Strokes } from "#models/Strokes.js";
 import util from "util";
 import { Boards } from "#models/Boards.js";
@@ -81,15 +81,12 @@ export const registerWebSocket = (io: Server) => {
     console.log(`New socket connection: ${socket.id}, session: ${session.user}`);
     console.log(util.inspect(session.user, false, null));
 
-    const userAuth =
-      boardId && session.user ? await checkCanvasAuth(boardId, session.user) : undefined;
-    if (!boardId || !userAuth) {
+    let userAuth: BoardPermission | null = null;
+    if (!boardId || !session.user || !(userAuth = await checkCanvasAuth(boardId, session.user))) {
       console.log(`Bad socket request found for socket: ${socket.id}`);
       socket.disconnect();
       return;
     }
-
-    // TODO: check if they are a viewer
 
     // Join the room for the board
     console.log(`Client ${socket.id} joining board room: ${boardId}`);
@@ -97,12 +94,14 @@ export const registerWebSocket = (io: Server) => {
 
     socket.on("disconnect", (reason) => {
       // Generate new preview image for the room they were in
-      forceNewCachePreview(boardId);
+      if (userAuth !== 'viewer') forceNewCachePreview(boardId);
       // Will leave room automatically
       console.log(`Client disconnected: ${socket.id}, reason: ${reason}`);
     });
 
     socket.on("update", async (data) => {
+      if (userAuth === 'viewer') return;
+      
       onUpdate(data satisfies ClientBoardUpdate, Number(boardId))
         .then((update) => {
           if (update) {
