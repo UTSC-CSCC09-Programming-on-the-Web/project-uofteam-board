@@ -71,7 +71,7 @@ function SettingsDialog({ open, board, shares, onClose, onUpdate }: SettingsDial
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog open={open}>
       <Dialog.Title>Settings</Dialog.Title>
       <Dialog.Content>
         <div>

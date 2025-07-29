@@ -127,7 +127,7 @@ function GenFillDialog({ state, onConfirm, onClose }: GenFillDialogProps) {
   const totalGenerations = generations.length;
 
   return (
-    <Dialog open={state !== null} onClose={onClose} className="max-w-lg">
+    <Dialog open={state !== null} className="max-w-lg">
       <Dialog.Title>Generative Fill</Dialog.Title>
       <Dialog.Content>
         {loading || !currentGeneration?.paths.length ? (
