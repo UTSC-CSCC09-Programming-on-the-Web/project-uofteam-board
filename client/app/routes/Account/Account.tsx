@@ -7,8 +7,8 @@ import clsx from "clsx";
 
 import { API } from "~/services";
 import { Button, Chip } from "~/components";
-import { extractInitials, sleep } from "~/utils";
 import type { User } from "~/types";
+import { sleep } from "~/utils";
 
 import type { Route } from "./+types/Account";
 import { ErrorState } from "./ErrorState";
@@ -77,14 +77,23 @@ const Account = () => {
     <ErrorState onRetry={fetchUser} retrying={loading} />
   ) : (
     <div className="flex flex-col items-center text-center mt-4">
-      <span
+      <div
         className={clsx(
           loading && "animate-pulse",
-          "size-24 flex items-center justify-center rounded-full bg-blue-100 border-4 border-dashed border-blue-800/40 text-4xl text-blue-800 font-extrabold",
+          "size-24 rounded-full overflow-hidden bg-gray-800/20",
         )}
       >
-        {user ? extractInitials(user.name) : ""}
-      </span>
+        {user && (
+          <img
+            alt={user.name}
+            src={API.getUserPictureURL()}
+            className="size-full"
+            onError={(e) => {
+              e.currentTarget.src = `https://ui-avatars.com/api/?name=${user.name}&background=000000&color=ffffff&size=48`;
+            }}
+          />
+        )}
+      </div>
       <h3 className="text-3xl font-bold mt-6">
         {user ? user.name : <LoadingText size="w-[12ch]" />}
       </h3>

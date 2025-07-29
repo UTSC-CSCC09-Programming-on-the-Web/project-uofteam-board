@@ -36,6 +36,10 @@ class ApiService {
     return this.get("/auth/me");
   }
 
+  public getUserPictureURL(): string {
+    return `${this.client.defaults.baseURL}/auth/me/picture`;
+  }
+
   public getBoards(
     page: number,
     limit: number,
