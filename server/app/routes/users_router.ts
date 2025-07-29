@@ -2,9 +2,9 @@ import { Router } from "express";
 import { Users } from "#models/Users.js";
 import type { UrlLink, User } from "#types/api.js";
 import { checkAuth, checkPaid } from "#middleware/checkAuth.js";
-import { getGoogleAuth, authParams, links } from "#oauth/googleoauth.js";
+import { getGoogleAuth, authParams, links } from "#services/googleoauth.js";
 import { SessionData } from "express-session";
-import { create_checkout_session } from "#stripe/checkout.js";
+import { create_checkout_session } from "#services/stripecheckout.js";
 
 export const usersRouter = Router();
 
