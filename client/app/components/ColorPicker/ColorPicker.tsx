@@ -11,6 +11,7 @@ type ColorPickerSize = "sm" | "md";
 interface ColorPickerProps {
   value: string;
   onChange: (color: string) => void;
+  title?: string;
   size?: ColorPickerSize;
   popoverClassName?: string;
 }
@@ -20,7 +21,7 @@ const sizeMap: Record<ColorPickerSize, string> = {
   md: "!size-10",
 };
 
-function ColorPicker({ value, onChange, size = "md", popoverClassName }: ColorPickerProps) {
+function ColorPicker({ value, onChange, title, size = "md", popoverClassName }: ColorPickerProps) {
   const [open, setOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const debounced = useDebouncedCallback(onChange, 100);
@@ -40,6 +41,7 @@ function ColorPicker({ value, onChange, size = "md", popoverClassName }: ColorPi
       <div className="cursor-pointer">
         <Button
           disabled={open}
+          title={title}
           variant="neutral"
           onClick={() => setOpen(true)}
           className={clsx(

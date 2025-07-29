@@ -522,8 +522,15 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
                     className="!w-10 !px-0"
                   />
                   <ColorPicker
+                    title="Stroke color"
                     value={strokeColor}
                     onChange={setStrokeColor}
+                    popoverClassName="!mt-4"
+                  />
+                  <ColorPicker
+                    title="Fill color"
+                    value={fillColor}
+                    onChange={setFillColor}
                     popoverClassName="!mt-4 !-right-3"
                   />
                 </Fragment>
