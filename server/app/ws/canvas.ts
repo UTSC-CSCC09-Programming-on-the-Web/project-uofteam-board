@@ -5,7 +5,8 @@ import { ClientBoardUpdate, Path, ServerBoardUpdate } from "#types/api.js";
 import { Strokes } from "#models/Strokes.js";
 import util from "util";
 import { Boards } from "#models/Boards.js";
-import { Op } from "sequelize";
+import { forceNewCachePreview } from "#services/cachepreview.js";
+
 
 const onUpdate = async (
   data: ClientBoardUpdate,
@@ -95,6 +96,8 @@ export const registerWebSocket = (io: Server) => {
     socket.join(boardId);
 
     socket.on("disconnect", (reason) => {
+      // Generate new preview image for the room they were in
+      forceNewCachePreview(boardId);
       // Will leave room automatically
       console.log(`Client disconnected: ${socket.id}, reason: ${reason}`);
     });
