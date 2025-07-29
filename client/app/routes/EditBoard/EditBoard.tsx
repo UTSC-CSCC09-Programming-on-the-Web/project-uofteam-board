@@ -71,6 +71,9 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
 
   const [fillColor, setFillColor] = useState("#fff085aa");
   const [strokeColor, setStrokeColor] = useState("#193cb8");
+  const [updateFillColor, setUpdateFillColor] = useState(fillColor);
+  const [updateStrokeColor, setUpdateStrokeColor] = useState(strokeColor);
+  const [updateFillColorVisible, setUpdateFillColorVisible] = useState(false);
   const [strokeWidthIndex, setStrokeWidthIndex] = useState(1);
   const [genFillState, setGenFillState] = useState<GenFillDialogState | null>(null);
   const [pathsForExport, setPathsForExport] = useState<Path[]>([]);
@@ -286,8 +289,30 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
         if (!selectionRectRef.current) return;
         selectionRectRef.current.hide();
         const bbox = startEndPointToBoundingBox({ start: bs.start, end: point });
-        const selected = paths.filter((x) => Konva.Util.haveIntersection(bbox, computeBoundingBox([x]))); // prettier-ignore
-        setSelectedIDs(selected.map((x) => x.id));
+        const selectedPaths = paths.filter((x) => Konva.Util.haveIntersection(bbox, computeBoundingBox([x]))); // prettier-ignore
+        if (selectedPaths.length === 0) {
+          setSelectedIDs([]);
+          break;
+        }
+
+        const firstStrokeColor = selectedPaths[0].strokeColor;
+        if (selectedPaths.every((x) => x.strokeColor === firstStrokeColor)) {
+          setUpdateStrokeColor(firstStrokeColor);
+        } else {
+          setUpdateStrokeColor(strokeColor);
+        }
+
+        const firstFillColor = selectedPaths[0].fillColor;
+        if (selectedPaths.every((x) => x.fillColor === firstFillColor)) {
+          setUpdateFillColor(firstFillColor);
+          // A fill color of "transparent" means the paths are hand-drawn and we
+          // should not allow the user to erroneously update the fill color.
+          setUpdateFillColorVisible(firstFillColor !== "transparent");
+        } else {
+          setUpdateFillColor(fillColor);
+        }
+
+        setSelectedIDs(selectedPaths.map((x) => x.id));
         break;
       }
       case "DRAWING_FREEHAND": {
@@ -405,18 +430,45 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
   }, [selectedIDs, params.bid]);
 
   const handleExport = useCallback(() => {
-    if (selectedIDs.length === 0) return;
     const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
+    if (selectedPaths.length === 0) {
+      setSelectedIDs([]);
+      return;
+    }
+
     setPathsForExport(selectedPaths);
     setSelectedIDs([]);
   }, [selectedIDs, paths]);
 
   const handleGenerativeFill = useCallback(() => {
-    if (selectedIDs.length === 0) return;
     const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
+    if (selectedPaths.length === 0) {
+      setSelectedIDs([]);
+      return;
+    }
+
     setGenFillState({ boardID: params.bid, paths: selectedPaths });
     setSelectedIDs([]);
   }, [selectedIDs, paths, params.bid]);
+
+  const handleUpdateFillColor = (color: string) => {
+    setFillColor(color);
+    setUpdateFillColor(color);
+    const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
+    const coalesceColor = (prev: string) => (prev === "transparent" ? "transparent" : color);
+    const updatedPaths = selectedPaths.map((p) => ({ ...p, fillColor: coalesceColor(p.fillColor) })); // prettier-ignore
+    setPaths((prev) => prev.map((p) => selectedIDs.includes(p.id) ? { ...p, fillColor: coalesceColor(p.fillColor) } : p)); // prettier-ignore
+    API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: updatedPaths });
+  };
+
+  const handleUpdateStrokeColor = (strokeColor: string) => {
+    setStrokeColor(strokeColor);
+    setUpdateStrokeColor(strokeColor);
+    const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
+    const updatedPaths = selectedPaths.map((p) => ({ ...p, strokeColor }));
+    setPaths((prev) => prev.map((p) => (selectedIDs.includes(p.id) ? { ...p, strokeColor } : p)));
+    API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: updatedPaths });
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -487,6 +539,22 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
                   <Button size="sm" icon={<FaWandMagicSparkles />} onClick={handleGenerativeFill}>
                     Generative Fill
                   </Button>
+                  <Tooltip text="Stroke color" position="bottom">
+                    <ColorPicker
+                      value={updateStrokeColor}
+                      onChange={handleUpdateStrokeColor}
+                      popoverClassName="!mt-4"
+                    />
+                  </Tooltip>
+                  {updateFillColorVisible && (
+                    <Tooltip text="Fill color" position="bottom">
+                      <ColorPicker
+                        value={updateFillColor}
+                        onChange={handleUpdateFillColor}
+                        popoverClassName="!mt-4"
+                      />
+                    </Tooltip>
+                  )}
                 </Fragment>
               ) : (
                 <Fragment key="no-selection-actions">
