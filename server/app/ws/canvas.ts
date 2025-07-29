@@ -118,7 +118,7 @@ export const registerWebSocket = (io: Server) => {
     });
 
     const initialData = await initialLoad(boardId);
-    if (initialData && !socket.userData?.paid) {
+    if (initialData && socket.userData?.paid) {
       io.to(socket.id).emit("update", initialData);
     }
   });
