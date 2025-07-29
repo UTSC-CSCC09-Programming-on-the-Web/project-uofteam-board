@@ -23,8 +23,11 @@ const BoardCard = ({ title, imageURL, chips, onClick }: BoardCardProps) => (
     <div className="relative">
       <img
         src={imageURL}
-        alt="A preview of the board"
+        alt={`Preview of "${title}"`}
         className="w-full h-[256px] sm:h-[320px] object-cover"
+        onError={(e) => {
+          e.currentTarget.src = "https://placehold.co/300x200?text=No+Preview+Available";
+        }}
       />
       <div className="absolute bottom-0 left-0 right-0 p-3 flex flex-wrap justify-end gap-2">
         {chips.map((x) => (

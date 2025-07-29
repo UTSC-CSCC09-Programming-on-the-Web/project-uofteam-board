@@ -137,6 +137,10 @@ class ApiService {
     }
   }
 
+  public getBoardPreviewImageURL(id: number): string {
+    return `${this.client.defaults.baseURL}/boards/${id}/picture`;
+  }
+
   public generativeFill(id: string, pathIDs: string[]): Promise<Response<Path[]>> {
     return this.post(`/boards/${id}/generative-fill`, { pathIDs });
   }
