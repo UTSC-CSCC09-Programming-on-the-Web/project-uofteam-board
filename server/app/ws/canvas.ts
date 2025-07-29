@@ -31,12 +31,14 @@ const onUpdate = async (
           rotation: path.rotation,
         });
       });
-      const updatedBoards = Boards.update({ updatedAt: new Date() }, {
-        where: {
-          boardId: { [Op.in]: Array.from(modifiedBoards) }
-        }
-      })
-      await Promise.allSettled([updatedBoards, ...newStrokes]);
+
+      const boardsToChange = await Boards.findAll({ where: { boardId: Array.from(modifiedBoards) } });
+      const updatedBoards = boardsToChange.map((board) => {
+        board.changed('updatedAt', true);
+        return board.update({ updatedAt: new Date() })
+      });
+
+      await Promise.allSettled([...newStrokes, ...updatedBoards]);
       return data satisfies ServerBoardUpdate;
     }
     case "DELETE_PATHS": {

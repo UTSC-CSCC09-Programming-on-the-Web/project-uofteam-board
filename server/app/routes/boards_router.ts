@@ -22,11 +22,7 @@ boardsRouter.post("/", checkAuth, async (req, res) => {
     res.status(400).json({ error: "Board name is required" });
     return;
   }
-  const board = await Boards.findOne({ where: { name } });
-  if (board) {
-    res.status(422).json({ error: "Board with this name already exists" });
-    return;
-  }
+
   const newBoard = await Boards.create({ name });
   const newBoardShare = await BoardShares.create({
     boardId: newBoard.boardId,
