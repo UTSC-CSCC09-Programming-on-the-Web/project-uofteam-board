@@ -19,6 +19,7 @@
     "@types/async-lock": "^1.4.2",
     "async-lock": "^1.4.1",
     "canvas": "^3.1.2",
+    "connect-redis": "^9.0.0",
     "cookie": "^1.0.2",
     "cors": "^2.8.5",
     "express": "^5.1.0",
@@ -26,6 +27,7 @@
     "konva": "^9.3.22",
     "morgan": "^1.10.0",
     "query-string": "^9.2.1",
+    "redis": "^5.6.1",
     "sequelize": "^6.37.3",
     "socket.io": "^4.8.1",
     "stripe": "^18.3.0"

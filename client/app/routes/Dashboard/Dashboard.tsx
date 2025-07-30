@@ -105,7 +105,7 @@ const Dashboard = () => {
               <BoardCard
                 key={x.id}
                 title={x.name}
-                imageURL="https://placehold.co/300x200"
+                imageURL={API.getBoardPreviewImageURL(x.id)}
                 onClick={() => navigate(`/boards/${x.id}`)}
                 chips={[
                   {

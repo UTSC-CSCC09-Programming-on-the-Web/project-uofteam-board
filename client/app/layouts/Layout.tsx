@@ -1,6 +1,8 @@
 import clsx from "clsx";
 import { useState } from "react";
 import { Outlet, useNavigate, useNavigation } from "react-router";
+import toast from "react-hot-toast";
+
 import { Header } from "~/components";
 import { API } from "~/services";
 
@@ -27,7 +29,7 @@ export default function Layout() {
               setSigningOut(true);
               const res = await API.postLogout();
               if (res.error !== null) {
-                alert(`Logout failed: ${res.error}`);
+                toast(`Logout failed:\n ${res.error}`);
                 setSigningOut(false);
                 return;
               }

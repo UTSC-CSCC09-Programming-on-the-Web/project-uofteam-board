@@ -31,7 +31,7 @@ const Home = () => {
   const handleLogin = async () => {
     setLoggingIn(true);
     setError(null);
-    const res = await API.getLoginRedirectUrl();
+    const res = await API.getLoginRedirectURL();
     if (res.error !== null) {
       toast(`Failed to fetch login URL:\n ${res.error}`);
       setError("auth_failed");

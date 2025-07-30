@@ -3,6 +3,7 @@ import queryString from "query-string";
 export const links = {
   authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
   tokenUrl: "https://oauth2.googleapis.com/token",
+  profileUrl: "https://www.googleapis.com/oauth2/v1/userinfo",
   clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
 };
 
@@ -17,7 +18,7 @@ const config = {
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   redirectUrl: process.env.REDIRECT_URL,
   tokenSecret: process.env.TOKEN_SECRET,
-  tokenExpiration: 3600, // 1 hour
+  tokenExpiration: 300, // 5 minutes
 };
 
 export const authParams = queryString.stringify({
@@ -41,11 +42,11 @@ const getTokenParams = (code: string) =>
 
 export async function getGoogleAuth(
   code?: string,
-): Promise<{ email: string; name: string } | undefined> {
+): Promise<{ email: string; name: string; picture: string } | undefined> {
   if (!code) {
     return;
   }
-  const tokenParams = getTokenParams(code as string);
+  const tokenParams = getTokenParams(code);
   const tokenResponse = await fetch(`${config.tokenUrl}?${tokenParams}`, {
     method: "POST",
     headers: {
@@ -55,11 +56,21 @@ export async function getGoogleAuth(
   if (!tokenResponse.ok) {
     return;
   }
-  const tokenData = (await tokenResponse.json()) as { access_token: string; id_token: string };
-  if (!tokenData?.id_token) {
-    return;
-  }
+  const wholeResponse = await tokenResponse.json();
+  const tokenData = wholeResponse as { access_token: string; id_token: string };
+  if (!tokenData?.id_token || !tokenData?.access_token) return;
 
-  const { email, name } = JSON.parse(atob(tokenData.id_token.split(".")[1]));
-  return { email, name };
+  // Get the profile information
+  const profileResponse = await fetch(
+    `${links.profileUrl}/?access_token=${tokenData.access_token}`,
+    { method: "GET" },
+  );
+  const userProfileInfo = (await profileResponse.json()) as {
+    email: string;
+    name: string;
+    picture: string;
+  };
+
+  const { email, name, picture } = userProfileInfo;
+  return { email, name, picture };
 }

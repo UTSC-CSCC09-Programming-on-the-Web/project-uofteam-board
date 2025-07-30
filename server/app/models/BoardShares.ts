@@ -1,5 +1,5 @@
 import { Model, DataTypes } from "sequelize";
-import { sequelize } from "../datasource.js";
+import { sequelize } from "../config/datasource.js";
 import { BoardPermission } from "#types/api.js";
 import { Boards } from "./Boards.js";
 import { Users } from "./Users.js";
@@ -53,7 +53,7 @@ BoardShares.init(
   },
 );
 
-BoardShares.belongsTo(Boards, { foreignKey: "boardId" });
+BoardShares.belongsTo(Boards, { foreignKey: "boardId", onDelete: "CASCADE", hooks: true });
 Boards.hasMany(BoardShares, { sourceKey: "boardId", foreignKey: "boardId" });
 
 BoardShares.belongsTo(Users, { foreignKey: "userId" });

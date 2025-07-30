@@ -3,11 +3,9 @@ import clsx from "clsx";
 
 interface DialogProps extends React.HTMLAttributes<HTMLDivElement> {
   open: boolean;
-  onClose: () => void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function Dialog({ open, onClose, children, className, ...rest }: DialogProps) {
+function Dialog({ open, children, className, ...rest }: DialogProps) {
   if (!open) return null;
 
   return (

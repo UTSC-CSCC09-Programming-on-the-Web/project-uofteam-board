@@ -7,20 +7,17 @@ import { render } from "#image-ai/render.js";
 import { main as aiModel } from "#image-ai/model.js";
 import { vectorizeBase64 } from "#image-ai/vectorize.js";
 import { BoardShares } from "#models/BoardShares.js";
+import { getSetCachedPreview } from "#services/cachepreview.js";
 
 export const boardsRouter = express.Router();
 
-boardsRouter.post("/", checkAuth(true), async (req, res) => {
+boardsRouter.post("/", checkAuth(), async (req, res) => {
   const { name } = req.body;
   if (!name) {
     res.status(400).json({ error: "Board name is required" });
     return;
   }
-  const board = await Boards.findOne({ where: { name } });
-  if (board) {
-    res.status(422).json({ error: "Board with this name already exists" });
-    return;
-  }
+
   const newBoard = await Boards.create({ name });
   const newBoardShare = await BoardShares.create({
     boardId: newBoard.boardId,
@@ -37,7 +34,7 @@ boardsRouter.post("/", checkAuth(true), async (req, res) => {
   } satisfies Board);
 });
 
-boardsRouter.get("/", checkAuth(true), async (req, res) => {
+boardsRouter.get("/", checkAuth(), async (req, res) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 8;
   const query = (req.query.query as string) || "";
@@ -107,6 +104,27 @@ boardsRouter.get("/:id", checkAuth(), async (req, res) => {
     updatedAt: boardData.Board.updatedAt.toISOString(),
     permission: boardData.permission,
   } satisfies Board);
+});
+
+boardsRouter.get("/:id/picture", checkAuth(), async (req, res) => {
+  const { id } = req.params;
+  const board = await BoardShares.findOne({
+    where: {
+      boardId: id,
+      userId: req.session.user?.id,
+    },
+  });
+  if (!board) {
+    res.status(404).json({ error: "Board not found" });
+    return;
+  }
+
+  const previewImg = await getSetCachedPreview(id);
+  if (previewImg === null) throw new Error("Failed to generate cached preview image!");
+
+  const imgBuffer = Buffer.from(previewImg.base64, "base64");
+  res.set("Content-Type", previewImg.mimeType);
+  res.send(imgBuffer);
 });
 
 boardsRouter.patch("/:id", checkAuth(), async (req, res) => {
@@ -192,8 +210,8 @@ boardsRouter.post("/:id/generative-fill", checkAuth(), async (req, res) => {
   }
 
   try {
-    const imgBase64 = await render(Number(id), pathIDs);
-    const newImgBase64 = await aiModel(imgBase64);
+    const renderedImg = await render(Number(id), pathIDs);
+    const newImgBase64 = await aiModel(renderedImg.base64);
     const paths = await vectorizeBase64(newImgBase64);
     res.json(paths satisfies Path[]);
   } catch (err) {
