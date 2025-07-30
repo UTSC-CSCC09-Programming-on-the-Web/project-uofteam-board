@@ -1,14 +1,14 @@
 import { Model, DataTypes } from "sequelize";
 import { sequelize } from "#config/datasource.js";
 
-export class StripeProcessed extends Model {
+export class StripeLogEvent extends Model {
   declare eventId: string;
   declare type: string;
   declare objectId: string;
   declare createdDate: Date;
 }
 
-StripeProcessed.init(
+StripeLogEvent.init(
   {
     eventId: {
       type: DataTypes.STRING,

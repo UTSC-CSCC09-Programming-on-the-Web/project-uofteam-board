@@ -1,4 +1,4 @@
-import { StripeProcessed } from "#models/StripeLogEvent.js"
+import { StripeLogEvent } from "#models/StripeLogEvent.js"
 import AsyncLock from "async-lock";
 import Stripe from "stripe"
 import nodeCron from "node-cron";
@@ -22,13 +22,13 @@ export const confirmEvent = async (event: Stripe.Event, objectId: string): Promi
     }
   
     // Duplicate Id
-    const sameId = await StripeProcessed.findByPk(event.id);
+    const sameId = await StripeLogEvent.findByPk(event.id);
     if (sameId) {
       return false;
     }
   
     // New event same object
-    const duplicateEvent = await StripeProcessed.findOne({
+    const duplicateEvent = await StripeLogEvent.findOne({
       where: {
         type: event.type,
         objectId
@@ -39,7 +39,7 @@ export const confirmEvent = async (event: Stripe.Event, objectId: string): Promi
     }
   
     // Proper event, add to records
-    await StripeProcessed.create({
+    await StripeLogEvent.create({
       eventId: event.id,
       type: event.type,
       objectId,
@@ -56,7 +56,7 @@ export const confirmEvent = async (event: Stripe.Event, objectId: string): Promi
 export const stripeCleanupJobScheduler = async () => {
   nodeCron.schedule("0,30 * * * *", async () => {
     const thrityMinsAgo = new Date((new Date()).getTime() - (1000 * 60 * 30));
-    const numDeleted = await StripeProcessed.destroy({
+    const numDeleted = await StripeLogEvent.destroy({
       where: {
         createdDate: {
           [Op.lt]: thrityMinsAgo
