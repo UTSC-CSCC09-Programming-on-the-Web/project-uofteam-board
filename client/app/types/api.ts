@@ -2,18 +2,18 @@ export type Response<T = null> =
   | { status: number; error: string; data: null }
   | { status: number; error: null; data: T };
 
-export type BoardPermission = "owner" | "editor" | "viewer";
+export interface Paginated<T> {
+  totalItems: number;
+  totalPages: number;
+  currPage: number;
+  prevPage: number | null;
+  nextPage: number | null;
+  limit: number;
+  data: T[];
+}
 
 export interface UrlLink {
   url: string;
-}
-
-export interface Board {
-  id: number;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-  permission: BoardPermission;
 }
 
 export interface User {
@@ -21,6 +21,16 @@ export interface User {
   name: string;
   email: string;
   paid: boolean;
+}
+
+export type BoardPermission = "owner" | "editor" | "viewer";
+
+export interface Board {
+  id: number;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  permission: BoardPermission;
 }
 
 export interface BoardShare {
@@ -55,13 +65,3 @@ export type ServerBoardUpdate =
 export type ClientBoardUpdate =
   | { type: "CREATE_OR_REPLACE_PATHS"; paths: Path[] }
   | { type: "DELETE_PATHS"; ids: string[] };
-
-export interface Paginated<T> {
-  totalItems: number;
-  totalPages: number;
-  currPage: number;
-  prevPage: number | null;
-  nextPage: number | null;
-  limit: number;
-  data: T[];
-}
