@@ -88,6 +88,13 @@ sharesSubRouter.post("/", checkAuth(), async (req, res) => {
     return;
   }
 
+  // Limit to 5 other shares per board (6 including owner)
+  const shareCount = await BoardShares.count({ where: { boardId: id } });
+  if (shareCount >= 6) {
+    res.status(422).json({ error: "Board has reached maximum number of shares!" });
+    return;
+  }
+
   const startingPermission: Exclude<BoardPermission, "owner"> = "viewer";
   const newShare = await BoardShares.create({
     boardId: id,
