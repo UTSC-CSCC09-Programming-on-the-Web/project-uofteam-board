@@ -3,9 +3,9 @@ import express from "express";
 import { checkCanvasAuth } from "#middleware/checkAuth.js";
 import { BoardPermission, ClientBoardUpdate, Path, ServerBoardUpdate } from "#types/api.js";
 import { Strokes } from "#models/Strokes.js";
-import util from "util";
 import { Boards } from "#models/Boards.js";
 import { forceNewCachePreview } from "#services/cachepreview.js";
+import { clearUserSocketId, getUserSocketId, setUserSocketId } from "#services/socketmap.js";
 
 let socketio: Server | null = null;
 
@@ -81,8 +81,7 @@ export const registerWebSocket = (io: Server) => {
     const session = req.session;
     const boardId = socket.handshake.query.boardId as string | undefined;
 
-    console.log(`New socket connection: ${socket.id}, session: ${session.user}`);
-    console.log(util.inspect(session.user, false, null));
+    console.log(`New socket connection: ${socket.id}, userid: ${session.user?.id}`);
 
     let userAuth: BoardPermission | null = null;
     if (!boardId || !session.user || !session.user.paid || !(userAuth = await checkCanvasAuth(boardId, session.user))) {
@@ -90,7 +89,13 @@ export const registerWebSocket = (io: Server) => {
       socket.disconnect();
       return;
     }
-
+    
+    // Add to the mapping, enforce one session per user
+    // TODO: kick the old one? or reject the new one?
+    const prevSocketId = await getUserSocketId(session.user.id);
+    if (prevSocketId) disconnectSocket(prevSocketId);
+    setUserSocketId(session.user.id, socket.id);
+    
     // Join the room for the board
     console.log(`Client ${socket.id} joining board room: ${boardId}`);
     socket.userData = session.user;
@@ -99,6 +104,8 @@ export const registerWebSocket = (io: Server) => {
     socket.on("disconnect", (reason) => {
       // Generate new preview image for the room they were in
       if (userAuth !== 'viewer') forceNewCachePreview(boardId);
+      // Remove from the socket map
+      if (session.user) clearUserSocketId(session.user.id);
       // Will leave room automatically
       console.log(`Client disconnected: ${socket.id}, reason: ${reason}`);
     });
@@ -118,26 +125,23 @@ export const registerWebSocket = (io: Server) => {
     });
 
     const initialData = await initialLoad(boardId);
-    if (initialData && !socket.userData?.paid) {
+    if (initialData && socket.userData?.paid) {
       io.to(socket.id).emit("update", initialData);
     }
   });
 };
 
-export const disconnectUnpaidUser = async (userId: number) => {
+const disconnectSocket = (socketId: string | null): boolean => {
   if (socketio === null) throw Error("Cannot kick users before registering web socket!");
+  if (socketId === null) return false;
+  const targetSocket = socketio.sockets.sockets.get(socketId);
+  if (targetSocket) targetSocket.disconnect(true); // disable reconnect
+  return targetSocket !== undefined
+}
 
-  for (const [id, connectedSocket] of socketio.sockets.sockets) {
-    if (!connectedSocket.userData) {
-      connectedSocket.disconnect(true);
-      continue;
-    }
-    if (connectedSocket.userData.id === userId) {
-      connectedSocket.userData.paid = false;
-      socketio.to(id).emit("DC", "You have been disconnected due to failure of payment.")
-
-      // Prevent automatic reconnection
-      connectedSocket.disconnect(true);
-    }
-  }
+export const disconnectUserSocket = async (userId: number) => {
+  if (socketio === null) throw Error("Cannot kick users before registering web socket!");
+  const socketId = await getUserSocketId(userId);
+  disconnectSocket(socketId);
+  await clearUserSocketId(userId);
 }
