@@ -3,8 +3,7 @@ import React from "react";
 
 type ChipVariant = "primary" | "secondary" | "neutral" | "success" | "danger";
 
-interface ChipProps
-  extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
+interface ChipProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: ChipVariant;
 }
 
@@ -16,19 +15,17 @@ const variantClasses: Record<ChipVariant, string> = {
   danger: "text-red-800 bg-red-100 border-red-800/50",
 };
 
-function Chip({ variant = "neutral", children, className, ...rest }: ChipProps) {
-  return (
-    <span
-      className={clsx(
-        "h-8 flex items-center border rounded-full px-3 text-sm font-semibold",
-        variantClasses[variant],
-        className,
-      )}
-      {...rest}
-    >
-      {children}
-    </span>
-  );
-}
+const Chip = ({ variant = "neutral", children, className, ...rest }: ChipProps) => (
+  <span
+    {...rest}
+    className={clsx(
+      "h-8 flex items-center border rounded-full px-3 text-sm font-semibold",
+      variantClasses[variant],
+      className,
+    )}
+  >
+    {children}
+  </span>
+);
 
 export { Chip, type ChipProps };

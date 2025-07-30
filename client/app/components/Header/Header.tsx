@@ -19,7 +19,7 @@ interface HeaderProps {
   buttons: HeaderButtonProps[];
 }
 
-function Header({ links, buttons }: HeaderProps) {
+const Header = ({ links, buttons }: HeaderProps) => {
   const [open, setOpen] = useState(false);
   const toggleMenu = () => setOpen((open) => !open);
 
@@ -70,6 +70,6 @@ function Header({ links, buttons }: HeaderProps) {
       </div>
     </header>
   );
-}
+};
 
 export { Header, type HeaderProps, type HeaderLinkProps, type HeaderButtonProps };

@@ -2,8 +2,8 @@ import React, { type ReactNode } from "react";
 import { Spinner } from "../Spinner";
 import clsx from "clsx";
 
-type ButtonVariant = "primary" | "secondary" | "neutral" | "danger";
 type ButtonSize = "sm" | "md";
+type ButtonVariant = "primary" | "secondary" | "neutral" | "danger";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: ReactNode;
@@ -32,7 +32,7 @@ const sizeClasses: Record<ButtonSize, string> = {
   md: "px-4 h-12 text-md",
 };
 
-function Button({
+const Button = ({
   children,
   size = "md",
   variant = "primary",
@@ -42,11 +42,13 @@ function Button({
   onClick,
   className,
   ...rest
-}: ButtonProps) {
+}: ButtonProps) => {
   const isDisabled = disabled || loading;
+  const iconSizeClass = "size-[1.3em]";
 
   return (
     <button
+      {...rest}
       onClick={onClick}
       disabled={isDisabled}
       className={clsx(
@@ -56,15 +58,14 @@ function Button({
         sizeClasses[size],
         className,
       )}
-      {...rest}
     >
-      {loading && <Spinner className="size-[1.3em] border-[.15em]" />}
+      {loading && <Spinner className={clsx(iconSizeClass, "border-[.15em]")} />}
       {!loading &&
         React.isValidElement<{ className?: string }>(icon) &&
-        React.cloneElement(icon, { className: clsx(icon.props.className, "size-[1.3em]") })}
+        React.cloneElement(icon, { className: clsx(icon.props.className, iconSizeClass) })}
       {children}
     </button>
   );
-}
+};
 
 export { Button, type ButtonProps };

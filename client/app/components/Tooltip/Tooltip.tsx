@@ -1,5 +1,5 @@
-import clsx from "clsx";
 import { useState, type ReactNode } from "react";
+import clsx from "clsx";
 
 type TooltipPosition = "top" | "bottom";
 
@@ -32,11 +32,11 @@ const Tooltip = ({ text, children, position = "top" }: TooltipProps) => {
       {visible && (
         <div
           className={clsx(
-            "absolute left-1/2 -translate-x-1/2 px-2 py-1 w-max bg-gray-800 text-white text-xs rounded-md z-10",
+            "absolute left-1/2 -translate-x-1/2 px-2 py-1 w-max bg-gray-800 rounded-md z-10",
             tooltipClasses[position],
           )}
         >
-          {text}
+          <span className="text-white text-xs">{text}</span>
           <div
             className={clsx(
               "absolute left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent",
