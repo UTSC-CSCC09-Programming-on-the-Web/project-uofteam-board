@@ -52,8 +52,8 @@ BoardShare.init(
   },
 );
 
-BoardShare.belongsTo(Board, { foreignKey: "boardId", onDelete: "CASCADE", hooks: true });
-Board.hasMany(BoardShare, { sourceKey: "boardId", foreignKey: "boardId" });
+BoardShare.belongsTo(Board, { foreignKey: "boardId" });
+Board.hasMany(BoardShare, { sourceKey: "boardId", foreignKey: "boardId", onDelete: "CASCADE", hooks: true });
 
 BoardShare.belongsTo(User, { foreignKey: "userId" });
 User.hasMany(BoardShare, { sourceKey: "userId", foreignKey: "userId" });
