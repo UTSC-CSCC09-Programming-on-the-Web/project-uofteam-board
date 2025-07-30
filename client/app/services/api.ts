@@ -8,6 +8,7 @@ class ApiService {
   private socket: Socket | null = null;
   private boardID: number | null = null;
   private csrfToken: string | null = null;
+  private csrfTokenPromise: Promise<void> | null = null;
 
   constructor(baseURL: string) {
     this.client = axios.create({
@@ -172,18 +173,23 @@ class ApiService {
   }
 
   private async getCsrfToken() {
-    const token = await this.get<{ token: string }>("/csrf-token");
-    if (token?.data) {
-      this.csrfToken = token.data.token;
-    }
+    if (this.csrfToken) return;
+    if (this.csrfTokenPromise) return this.csrfTokenPromise;
+    this.csrfTokenPromise = this.get<{ token: string }>("/csrf-token")
+      .then((token) => {
+        if (token.data !== null) {
+          this.csrfToken = token.data.token;
+        }
+      })
+      .finally(() => {
+        this.csrfTokenPromise = null;
+      });
+    return this.csrfTokenPromise;
   }
 
   private async request<T>(config: AxiosRequestConfig): Promise<Response<T>> {
     if (config.method !== "get" && this.csrfToken === null) await this.getCsrfToken();
-    const res = await this.plainRequest<T>({
-      ...config,
-      headers: { "x-csrf-token": this.csrfToken },
-    });
+    const res = await this.plainRequest<T>({ ...config, headers: { "x-csrf-token": this.csrfToken } }); // prettier-ignore
     if (res.status === 403) {
       // Retry with new token (in case session expired)
       await this.getCsrfToken();
