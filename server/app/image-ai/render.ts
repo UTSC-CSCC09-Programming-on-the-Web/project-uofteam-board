@@ -65,7 +65,7 @@ export const renderPaths = (paths: Path[]): RenderedImage => {
 
   return {
     mimeType: "image/png",
-    base64: base64
+    base64: base64,
   } satisfies RenderedImage;
 };
 
@@ -75,8 +75,8 @@ export async function render(boardId: number, ids: string[] = []): Promise<Rende
       boardId,
       ...(ids.length !== 0 && {
         strokeId: ids,
-      })
-    }
+      }),
+    },
   });
 
   const paths = strokes.map((stroke) => ({
@@ -96,9 +96,14 @@ export async function render(boardId: number, ids: string[] = []): Promise<Rende
 
   if (process.env.SAVE_IMAGES_DEBUG_ENABLED === "1") {
     const filename = `${Date.now()}_img.png`;
-    fs.writeFile(`./app/image-ai/dump/${filename}`, renderedImg.base64, { encoding: "base64" }, () => {
-      console.log("File created");
-    });
+    fs.writeFile(
+      `./app/image-ai/dump/${filename}`,
+      renderedImg.base64,
+      { encoding: "base64" },
+      () => {
+        console.log("File created");
+      },
+    );
   }
 
   return renderedImg;

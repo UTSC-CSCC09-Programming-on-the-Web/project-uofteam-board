@@ -3,23 +3,25 @@ import { redisCacheClient } from "#config/redis.js";
 import { RenderedImage } from "#types/image.js";
 import AsyncLock from "async-lock";
 
-const PREVIEW_CACHE_DURATION = 60 * 60 * 24 // 24 hours
+const PREVIEW_CACHE_DURATION = 60 * 60 * 24; // 24 hours
 
-const boardToKey = (boardId: string) => { return `bp_${boardId}`; }
+const boardToKey = (boardId: string) => {
+  return `bp_${boardId}`;
+};
 
 export const forceNewCachePreview = async (boardId: string): Promise<boolean> => {
   try {
-    console.log("force rendering new image preview")
+    console.log("force rendering new image preview");
     const renderedImg = await render(Number(boardId));
     await redisCacheClient.set(boardToKey(boardId), JSON.stringify(renderedImg), {
-      expiration: { type: 'EX', value: PREVIEW_CACHE_DURATION }
+      expiration: { type: "EX", value: PREVIEW_CACHE_DURATION },
     });
     return true;
   } catch (error) {
     console.error(error);
     return false;
   }
-}
+};
 
 const previewRenderLock = new AsyncLock();
 export const getSetCachedPreview = async (boardId: string): Promise<RenderedImage | null> => {
@@ -32,12 +34,12 @@ export const getSetCachedPreview = async (boardId: string): Promise<RenderedImag
     try {
       const renderedImg = await render(Number(boardId));
       await redisCacheClient.set(boardToKey(boardId), JSON.stringify(renderedImg), {
-        expiration: { type: 'EX', value: PREVIEW_CACHE_DURATION }
+        expiration: { type: "EX", value: PREVIEW_CACHE_DURATION },
       });
       return renderedImg;
     } catch (error) {
       console.error(error);
       return null;
     }
-  })
-}
+  });
+};

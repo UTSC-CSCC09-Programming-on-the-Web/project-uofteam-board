@@ -28,7 +28,7 @@ Users.init(
     pictureUrl: {
       type: DataTypes.STRING(2048),
       allowNull: false,
-    }
+    },
   },
   {
     sequelize,

@@ -34,10 +34,12 @@ const onUpdate = async (
         });
       });
 
-      const boardsToChange = await Boards.findAll({ where: { boardId: Array.from(modifiedBoards) } });
+      const boardsToChange = await Boards.findAll({
+        where: { boardId: Array.from(modifiedBoards) },
+      });
       const updatedBoards = boardsToChange.map((board) => {
-        board.changed('updatedAt', true);
-        return board.update({ updatedAt: new Date() })
+        board.changed("updatedAt", true);
+        return board.update({ updatedAt: new Date() });
       });
 
       await Promise.allSettled([...newStrokes, ...updatedBoards]);
@@ -74,7 +76,7 @@ const initialLoad = async (boardId: string): Promise<ServerBoardUpdate | null> =
 };
 
 export const registerWebSocket = (io: Server) => {
-  socketio = io;  // Save to use for kicking
+  socketio = io; // Save to use for kicking
 
   io.on("connection", async (socket: Socket) => {
     const req = socket.request as express.Request;
@@ -84,18 +86,23 @@ export const registerWebSocket = (io: Server) => {
     console.log(`New socket connection: ${socket.id}, userid: ${session.user?.id}`);
 
     let userAuth: BoardPermission | null = null;
-    if (!boardId || !session.user || !session.user.paid || !(userAuth = await checkCanvasAuth(boardId, session.user))) {
+    if (
+      !boardId ||
+      !session.user ||
+      !session.user.paid ||
+      !(userAuth = await checkCanvasAuth(boardId, session.user))
+    ) {
       console.log(`Bad socket request found for socket: ${socket.id}`);
       socket.disconnect();
       return;
     }
-    
+
     // Add to the mapping, enforce one session per user
     // TODO: kick the old one? or reject the new one?
     const prevSocketId = await getUserSocketId(session.user.id);
     if (prevSocketId) disconnectSocket(prevSocketId);
     setUserSocketId(session.user.id, socket.id);
-    
+
     // Join the room for the board
     console.log(`Client ${socket.id} joining board room: ${boardId}`);
     socket.userData = session.user;
@@ -103,7 +110,7 @@ export const registerWebSocket = (io: Server) => {
 
     socket.on("disconnect", (reason) => {
       // Generate new preview image for the room they were in
-      if (userAuth !== 'viewer') forceNewCachePreview(boardId);
+      if (userAuth !== "viewer") forceNewCachePreview(boardId);
       // Remove from the socket map
       if (session.user) clearUserSocketId(session.user.id);
       // Will leave room automatically
@@ -111,7 +118,7 @@ export const registerWebSocket = (io: Server) => {
     });
 
     socket.on("update", async (data) => {
-      if (userAuth === 'viewer' || !socket.userData?.paid) return;
+      if (userAuth === "viewer" || !socket.userData?.paid) return;
 
       onUpdate(data satisfies ClientBoardUpdate, Number(boardId))
         .then((update) => {
@@ -136,12 +143,12 @@ const disconnectSocket = (socketId: string | null): boolean => {
   if (socketId === null) return false;
   const targetSocket = socketio.sockets.sockets.get(socketId);
   if (targetSocket) targetSocket.disconnect(true); // disable reconnect
-  return targetSocket !== undefined
-}
+  return targetSocket !== undefined;
+};
 
 export const disconnectUserSocket = async (userId: number) => {
   if (socketio === null) throw Error("Cannot kick users before registering web socket!");
   const socketId = await getUserSocketId(userId);
   disconnectSocket(socketId);
   await clearUserSocketId(userId);
-}
+};

@@ -46,7 +46,7 @@ try {
   await redisCacheClient.connect();
   await redisSessionClient.connect();
 } catch (error) {
-  console.error("Unable to connect to redis:", error)
+  console.error("Unable to connect to redis:", error);
 }
 
 // Create session store
@@ -59,9 +59,9 @@ const sessionMiddleware = session({
   resave: false,
   saveUninitialized: false, // Don't create session until something stored
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax' // CSRF protection
-  }
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax", // CSRF protection
+  },
 });
 app.use(sessionMiddleware);
 

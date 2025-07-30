@@ -146,7 +146,7 @@ sharesSubRouter.post("/update", checkAuth(), async (req, res) => {
       continue;
     }
 
-    if (!['viewer', 'editor'].includes(update.permission)) continue;
+    if (!["viewer", "editor"].includes(update.permission)) continue;
     boardShare.permission = update.permission;
     await boardShare.save();
     const saved = boardShare.get({ plain: true });

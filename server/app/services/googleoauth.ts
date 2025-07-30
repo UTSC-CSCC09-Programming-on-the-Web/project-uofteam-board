@@ -42,7 +42,7 @@ const getTokenParams = (code: string) =>
 
 export async function getGoogleAuth(
   code?: string,
-): Promise<{ email: string; name: string, picture: string } | undefined> {
+): Promise<{ email: string; name: string; picture: string } | undefined> {
   if (!code) {
     return;
   }
@@ -56,17 +56,21 @@ export async function getGoogleAuth(
   if (!tokenResponse.ok) {
     return;
   }
-  const wholeResponse = await tokenResponse.json() 
+  const wholeResponse = await tokenResponse.json();
   const tokenData = wholeResponse as { access_token: string; id_token: string };
   if (!tokenData?.id_token || !tokenData?.access_token) return;
 
   // Get the profile information
   const profileResponse = await fetch(
     `${links.profileUrl}/?access_token=${tokenData.access_token}`,
-    { method: "GET" }
+    { method: "GET" },
   );
-  const userProfileInfo = await profileResponse.json() as { email: string, name: string, picture: string}
+  const userProfileInfo = (await profileResponse.json()) as {
+    email: string;
+    name: string;
+    picture: string;
+  };
 
-  const { email, name, picture } = userProfileInfo
+  const { email, name, picture } = userProfileInfo;
   return { email, name, picture };
 }

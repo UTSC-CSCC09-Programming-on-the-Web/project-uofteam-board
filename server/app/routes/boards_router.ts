@@ -9,9 +9,7 @@ import { vectorizeBase64 } from "#image-ai/vectorize.js";
 import { BoardShares } from "#models/BoardShares.js";
 import { getSetCachedPreview } from "#services/cachepreview.js";
 
-
 export const boardsRouter = express.Router();
-
 
 boardsRouter.post("/", checkAuth(), async (req, res) => {
   const { name } = req.body;
@@ -124,8 +122,8 @@ boardsRouter.get("/:id/picture", checkAuth(), async (req, res) => {
   const previewImg = await getSetCachedPreview(id);
   if (previewImg === null) throw new Error("Failed to generate cached preview image!");
 
-  const imgBuffer = Buffer.from(previewImg.base64, 'base64');
-  res.set('Content-Type', previewImg.mimeType);
+  const imgBuffer = Buffer.from(previewImg.base64, "base64");
+  res.set("Content-Type", previewImg.mimeType);
   res.send(imgBuffer);
 });
 

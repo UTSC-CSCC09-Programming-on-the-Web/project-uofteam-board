@@ -97,7 +97,7 @@ stripeWebhook.post("/webhook", express.raw({ type: "application/json" }), async 
         stripeCustomer.status = subscription.status;
         stripeCustomer.save();
       }
-      if (subscription.status !== 'active') disconnectUserSocket(Number(internalUserId));
+      if (subscription.status !== "active") disconnectUserSocket(Number(internalUserId));
 
       console.log(`User ${internalUserId} subscription status updated to: ${subscription.status}`);
       break;
@@ -122,7 +122,7 @@ stripeWebhook.post("/webhook", express.raw({ type: "application/json" }), async 
       }
       stripeCustomer.status = newStatus;
       await stripeCustomer.save();
-      if (newStatus !== 'active') disconnectUserSocket(stripeCustomer.userId);
+      if (newStatus !== "active") disconnectUserSocket(stripeCustomer.userId);
 
       break;
     }
