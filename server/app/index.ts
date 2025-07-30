@@ -14,6 +14,7 @@ import { redisCacheClient, redisSessionClient } from "#config/redis.js";
 import { saveSessionStore } from "#services/sessionstore.js";
 import { csrfTokenRouter } from "#routes/csrf_router.js";
 import * as csrf from "#services/csrftoken.js";
+import { stripeCleanupJobScheduler } from "#services/stripeprocessed.js";
 
 if (!process.env.SECRET_KEY) {
   console.warn("SECRET_KEY is not set. Using default secret key for session management.");
@@ -113,3 +114,6 @@ server.listen(PORT, (err?: Error) => {
     console.log(`HTTP & WebSocket server running on http://localhost:${PORT}`);
   }
 });
+
+// Schedule clean up job for processed stripe events
+stripeCleanupJobScheduler();

@@ -13,7 +13,6 @@ const onUpdate = async (
   data: ClientBoardUpdate,
   boardId: number,
 ): Promise<ServerBoardUpdate | null> => {
-  console.log("Received update:", data);
   switch (data.type) {
     case "CREATE_OR_REPLACE_PATHS": {
       const modifiedBoards = new Set<number>();

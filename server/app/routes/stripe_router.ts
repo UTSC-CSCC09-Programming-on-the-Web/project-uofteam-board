@@ -6,6 +6,7 @@ import { StripeCustomers } from "#models/StripeCustomers.js";
 import { UrlLink } from "#types/api.js";
 import { create_checkout_session } from "#services/stripecheckout.js";
 import { disconnectUserSocket } from "#ws/canvas.js";
+import { confirmEvent } from "#services/stripeprocessed.js";
 const stripe = new Stripe(process.env.STRIPE_API_SECRET as string);
 
 export const stripeRouter = Router();
@@ -55,9 +56,16 @@ stripeWebhook.post("/webhook", express.raw({ type: "application/json" }), async 
     return;
   }
   res.sendStatus(200); // Acknowledge
+  
+  // Not an event we handle
+  if (event.type !== 'customer.subscription.deleted' &&
+      event.type !== 'customer.subscription.updated' &&
+      event.type !== 'checkout.session.completed') return;
 
-  // Handle the event
-  console.log(`Got event type ${event.type}.`);
+  // Confirm validity and add to record
+  console.log("[STRIPE WEBHOOK] Got event", event.id);
+  if (!confirmEvent(event, event.data.object.id)) return;
+
   switch (event.type) {
     case "checkout.session.completed": {
       const checkoutSession = event.data.object;
@@ -149,8 +157,5 @@ stripeWebhook.post("/webhook", express.raw({ type: "application/json" }), async 
 
       break;
     }
-
-    default:
-      console.log(`Unhandled event type ${event.type}.`);
   }
 });
