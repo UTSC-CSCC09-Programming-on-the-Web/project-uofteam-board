@@ -83,12 +83,12 @@ class ApiService {
   }
 
   public listenForBoardUpdates(
-    id: number,
+    boardID: number,
     onUpdate: (update: ServerBoardUpdate) => void,
     onError: (error: Error) => void,
     onClose: (reason: string) => void,
   ): () => void {
-    if (this.boardID === id) {
+    if (this.boardID === boardID) {
       this.socket?.disconnect();
       this.socket = null;
       this.boardID = null;
@@ -97,29 +97,33 @@ class ApiService {
     // Use the correct protocol and path for Socket.IO
     const socket = io(config.WS_BASE_URL, {
       path: "/ws/",
-      query: { boardId: id.toString() },
+      query: { boardId: boardID.toString() },
       transports: ["websocket"],
       withCredentials: true,
     });
     this.socket = socket;
-    this.boardID = id;
+    this.boardID = boardID;
 
     socket.on("connect", () => {
-      console.log(`Socket connected for board ${id} (socket ID: ${socket.id})`);
+      if (config.LOGGING_ENABLED)
+        console.log(`Socket connected for board ${boardID} (socket ID: ${socket.id})`);
     });
 
     socket.on("update", (update: ServerBoardUpdate) => {
-      console.log(`Received update for board ${id}:`, update);
+      if (config.LOGGING_ENABLED)
+        console.log(`Received an update over socket for board ${boardID}:`, update);
       onUpdate(update);
     });
 
     socket.on("connect_error", (err) => {
-      console.log(`Socket connection error for board ${id}:`, err.stack || err);
+      if (config.LOGGING_ENABLED)
+        console.error(`Socket connection error for board ${boardID}:`, err.stack || err);
       onError(err);
     });
 
     socket.on("disconnect", (reason) => {
-      console.log(`Socket disconnected for board ${id} (reason: ${reason})`);
+      if (config.LOGGING_ENABLED)
+        console.warn(`Socket disconnected for board ${boardID} (reason: ${reason})`);
       this.socket = null;
       this.boardID = null;
       onClose(reason);
@@ -134,9 +138,9 @@ class ApiService {
 
   public emitBoardUpdate(boardID: number, update: ClientBoardUpdate): void {
     if (this.socket?.connected) {
-      console.log(`Emitting update:`, update);
+      if (config.LOGGING_ENABLED) console.log(`Emitting update for board ${boardID}:`, update);
       this.socket.emit("update", update);
-    } else {
+    } else if (config.LOGGING_ENABLED) {
       console.warn(`Socket for board ${boardID} is not connected. Cannot emit update.`);
     }
   }
@@ -149,7 +153,7 @@ class ApiService {
     return this.post(`/boards/${boardID}/generative-fill`, { pathIDs });
   }
 
-  // -------------------------------------------------------------------------------------------------------------------
+  // -----------------------------------------------------------------------------------------------
 
   private get<T>(url: string, config?: AxiosRequestConfig): Promise<Response<T>> {
     return this.request<T>({ ...config, method: "get", url });
