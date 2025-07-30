@@ -11,7 +11,6 @@ const boardToKey = (boardId: string) => {
 
 export const forceNewCachePreview = async (boardId: string): Promise<boolean> => {
   try {
-    console.log("force rendering new image preview");
     const renderedImg = await render(Number(boardId));
     await redisCacheClient.set(boardToKey(boardId), JSON.stringify(renderedImg), {
       expiration: { type: "EX", value: PREVIEW_CACHE_DURATION },

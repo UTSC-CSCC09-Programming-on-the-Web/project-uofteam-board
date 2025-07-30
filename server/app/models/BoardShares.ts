@@ -53,7 +53,7 @@ BoardShares.init(
   },
 );
 
-BoardShares.belongsTo(Boards, { foreignKey: "boardId" });
+BoardShares.belongsTo(Boards, { foreignKey: "boardId", onDelete: "CASCADE", hooks: true });
 Boards.hasMany(BoardShares, { sourceKey: "boardId", foreignKey: "boardId" });
 
 BoardShares.belongsTo(Users, { foreignKey: "userId" });
