@@ -1,8 +1,8 @@
 import { Model, DataTypes } from "sequelize";
 import { sequelize } from "../config/datasource.js";
-import { Boards } from "./Boards.js";
+import { Board } from "./Boards.js";
 
-export class Strokes extends Model {
+export class Stroke extends Model {
   declare strokeId: string;
   declare boardId: number;
 
@@ -18,7 +18,7 @@ export class Strokes extends Model {
   declare rotation: number;
 }
 
-Strokes.init(
+Stroke.init(
   {
     strokeId: {
       type: DataTypes.UUID,
@@ -78,5 +78,5 @@ Strokes.init(
   },
 );
 
-Strokes.belongsTo(Boards, { foreignKey: "boardId", onDelete: "CASCADE", hooks: true });
-Boards.hasMany(Strokes, { sourceKey: "boardId", foreignKey: "boardId" });
+Stroke.belongsTo(Board, { foreignKey: "boardId", onDelete: "CASCADE", hooks: true });
+Board.hasMany(Stroke, { sourceKey: "boardId", foreignKey: "boardId" });

@@ -2,7 +2,7 @@ import { Router } from "express";
 import Stripe from "stripe";
 import express from "express";
 import { checkAuth } from "#middleware/checkAuth.js";
-import { StripeCustomers } from "#models/StripeCustomers.js";
+import { StripeCustomer } from "#models/StripeCustomers.js";
 import { UrlLink } from "#types/api.js";
 import { create_checkout_session } from "#services/stripecheckout.js";
 import { disconnectUserSocket } from "#ws/canvas.js";
@@ -26,7 +26,7 @@ stripeRouter.post("/create-checkout-session", checkAuth(false), async (req, res)
 stripeRouter.post("/create-portal-session", checkAuth(), async (req, res) => {
   const returnUrl = `${process.env.CLIENT_URL}/account`;
 
-  const stripeCustomer = await StripeCustomers.findByPk(req.session.user?.id);
+  const stripeCustomer = await StripeCustomer.findByPk(req.session.user?.id);
   if (!stripeCustomer) {
     res.status(403).json({ error: "Cannot open portal without going through checkout" });
     return;
@@ -91,9 +91,9 @@ stripeWebhook.post("/webhook", express.raw({ type: "application/json" }), async 
 
       const subscription = await stripe.subscriptions.retrieve(stripeSubscriptionId as string);
 
-      let stripeCustomer = await StripeCustomers.findByPk(internalUserId);
+      let stripeCustomer = await StripeCustomer.findByPk(internalUserId);
       if (!stripeCustomer) {
-        stripeCustomer = await StripeCustomers.create({
+        stripeCustomer = await StripeCustomer.create({
           userId: internalUserId,
           subscriptionId: stripeSubscriptionId,
           customerId: stripeCustomerId,
@@ -123,7 +123,7 @@ stripeWebhook.post("/webhook", express.raw({ type: "application/json" }), async 
       );
       console.log(`New Status: ${newStatus}`);
 
-      const stripeCustomer = await StripeCustomers.findOne({ where: { customerId } });
+      const stripeCustomer = await StripeCustomer.findOne({ where: { customerId } });
       if (!stripeCustomer) {
         console.error(`Received update for non-existing customer! ${customerId}`);
         return;
@@ -141,7 +141,7 @@ stripeWebhook.post("/webhook", express.raw({ type: "application/json" }), async 
       const deletedCustomerId = deletedSubscription.customer;
       const deletedSubscriptionId = deletedSubscription.id;
 
-      const stripeCustomer = await StripeCustomers.findOne({
+      const stripeCustomer = await StripeCustomer.findOne({
         where: { customerId: deletedCustomerId },
       });
       if (!stripeCustomer) {

@@ -1,10 +1,10 @@
-import { BoardShares } from "#models/BoardShares.js";
-import { StripeCustomers } from "#models/StripeCustomers.js";
+import { BoardShare } from "#models/BoardShares.js";
+import { StripeCustomer } from "#models/StripeCustomers.js";
 import { BoardPermission, User } from "#types/api.js";
 import { Request, Response, NextFunction } from "express";
 
 export async function checkPaid(userId: number): Promise<boolean> {
-  const stripeCustomer = await StripeCustomers.findByPk(userId);
+  const stripeCustomer = await StripeCustomer.findByPk(userId);
   return stripeCustomer?.status === "active";
 }
 
@@ -30,7 +30,7 @@ export async function checkCanvasAuth(
   boardId: string,
   session: User,
 ): Promise<BoardPermission | null> {
-  const board = await BoardShares.findOne({
+  const board = await BoardShare.findOne({
     where: {
       boardId,
       userId: session.id,

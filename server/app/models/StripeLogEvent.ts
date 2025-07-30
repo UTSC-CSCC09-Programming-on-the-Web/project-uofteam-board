@@ -29,7 +29,6 @@ StripeProcessed.init(
   },
   {
     sequelize,
-    modelName: "StripeProcessed",
     timestamps: false,
   },
 );

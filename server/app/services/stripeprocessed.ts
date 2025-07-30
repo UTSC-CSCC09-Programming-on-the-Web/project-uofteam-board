@@ -1,4 +1,4 @@
-import { StripeProcessed } from "#models/StripeProcessed.js"
+import { StripeProcessed } from "#models/StripeLogEvent.js"
 import AsyncLock from "async-lock";
 import Stripe from "stripe"
 import nodeCron from "node-cron";

@@ -1,12 +1,12 @@
 import express from "express";
 import { Op } from "sequelize";
-import { Boards } from "#models/Boards.js";
+import { Board } from "#models/Boards.js";
 import type { Board, BoardPermission, Paginated, Path } from "#types/api.js";
 import { checkAuth } from "#middleware/checkAuth.js";
 import { render } from "#image-ai/render.js";
 import { main as aiModel } from "#image-ai/model.js";
 import { vectorizeBase64 } from "#image-ai/vectorize.js";
-import { BoardShares } from "#models/BoardShares.js";
+import { BoardShare } from "#models/BoardShares.js";
 import { getSetCachedPreview } from "#services/cachepreview.js";
 import AsyncLock from "async-lock";
 
@@ -38,8 +38,8 @@ boardsRouter.post("/", checkAuth(), async (req, res) => {
     return;
   }
 
-  const newBoard = await Boards.create({ name });
-  const newBoardShare = await BoardShares.create({
+  const newBoard = await Board.create({ name });
+  const newBoardShare = await BoardShare.create({
     boardId: newBoard.boardId,
     userId: req.session.user?.id,
     permission: "owner",
@@ -59,12 +59,12 @@ boardsRouter.get("/", checkAuth(), async (req, res) => {
   const limit = parseInt(req.query.limit as string) || 8;
   const query = (req.query.query as string) || "";
 
-  const { count: totalItems, rows } = await BoardShares.findAndCountAll({
+  const { count: totalItems, rows } = await BoardShare.findAndCountAll({
     where: {
       userId: req.session.user?.id,
     },
     include: {
-      model: Boards,
+      model: Board,
       ...(query && {
         where: {
           name: {
@@ -75,7 +75,7 @@ boardsRouter.get("/", checkAuth(), async (req, res) => {
     },
     offset: (page - 1) * limit,
     limit,
-    order: [[Boards, "createdAt", "DESC"]],
+    order: [[Board, "createdAt", "DESC"]],
   });
 
   const totalPages = Math.ceil(totalItems / limit) || 1;
@@ -102,13 +102,13 @@ boardsRouter.get("/", checkAuth(), async (req, res) => {
 
 boardsRouter.get("/:id", checkAuth(), async (req, res) => {
   const { id } = req.params;
-  const board = await BoardShares.findOne({
+  const board = await BoardShare.findOne({
     where: {
       boardId: id,
       userId: req.session.user?.id,
     },
     include: {
-      model: Boards,
+      model: Board,
     },
   });
   if (!board) {
@@ -128,7 +128,7 @@ boardsRouter.get("/:id", checkAuth(), async (req, res) => {
 
 boardsRouter.get("/:id/picture", checkAuth(), async (req, res) => {
   const { id } = req.params;
-  const board = await BoardShares.findOne({
+  const board = await BoardShare.findOne({
     where: {
       boardId: id,
       userId: req.session.user?.id,
@@ -159,7 +159,7 @@ boardsRouter.patch("/:id", checkAuth(), async (req, res) => {
     return;
   }
 
-  const boardShare = await BoardShares.findOne({
+  const boardShare = await BoardShare.findOne({
     where: {
       boardId: id,
       userId: req.session.user?.id,
@@ -174,7 +174,7 @@ boardsRouter.patch("/:id", checkAuth(), async (req, res) => {
     return;
   }
 
-  const board = await Boards.findByPk(boardShare.boardId);
+  const board = await Board.findByPk(boardShare.boardId);
   if (!board) throw Error("Board share referencing non-existant board!");
   board.name = name;
   await board.save();
@@ -192,7 +192,7 @@ boardsRouter.delete("/:id", checkAuth(), async (req, res) => {
   const ALLOWED: BoardPermission[] = ["owner"];
   const { id } = req.params;
 
-  const boardShare = await BoardShares.findOne({
+  const boardShare = await BoardShare.findOne({
     where: {
       boardId: id,
       userId: req.session.user?.id,
@@ -207,7 +207,7 @@ boardsRouter.delete("/:id", checkAuth(), async (req, res) => {
     return;
   }
 
-  const board = await Boards.findByPk(boardShare.boardId);
+  const board = await Board.findByPk(boardShare.boardId);
   if (!board) throw Error("Board share referencing non-existant board!");
   await board.destroy();
 
@@ -226,7 +226,7 @@ boardsRouter.post("/:id/generative-fill", checkAuth(), async (req, res) => {
 
   const { pathIDs } = req.body;
   const { id } = req.params;
-  if (!id || !(await Boards.findByPk(id))) {
+  if (!id || !(await Board.findByPk(id))) {
     res.status(404).json({ error: "Board not found" });
     return;
   }

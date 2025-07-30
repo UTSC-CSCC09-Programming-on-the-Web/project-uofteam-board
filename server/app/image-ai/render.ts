@@ -1,5 +1,5 @@
 import Konva from "konva";
-import { Strokes } from "#models/Strokes.js";
+import { Stroke } from "#models/Strokes.js";
 import type { Path } from "#types/api.js";
 import * as KonvaUtil from "./utils";
 import fs from "fs";
@@ -70,7 +70,7 @@ export const renderPaths = (paths: Path[]): RenderedImage => {
 };
 
 export async function render(boardId: number, ids: string[] = []): Promise<RenderedImage> {
-  const strokes = await Strokes.findAll({
+  const strokes = await Stroke.findAll({
     where: {
       boardId,
       ...(ids.length !== 0 && {

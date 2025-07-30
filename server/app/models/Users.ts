@@ -1,14 +1,14 @@
 import { Model, DataTypes } from "sequelize";
 import { sequelize } from "../config/datasource.js";
 
-export class Users extends Model {
+export class User extends Model {
   declare userId: number;
   declare name: string;
   declare email: string;
   declare pictureUrl: string;
 }
 
-Users.init(
+User.init(
   {
     userId: {
       type: DataTypes.INTEGER,

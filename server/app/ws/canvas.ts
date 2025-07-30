@@ -2,8 +2,8 @@ import { Server, Socket } from "socket.io";
 import express from "express";
 import { checkCanvasAuth } from "#middleware/checkAuth.js";
 import { BoardPermission, ClientBoardUpdate, Path, ServerBoardUpdate } from "#types/api.js";
-import { Strokes } from "#models/Strokes.js";
-import { Boards } from "#models/Boards.js";
+import { Stroke } from "#models/Strokes.js";
+import { Board } from "#models/Boards.js";
 import { forceNewCachePreview } from "#services/cachepreview.js";
 import { clearUserSocketId, getUserSocketId, setUserSocketId } from "#services/socketmap.js";
 
@@ -18,7 +18,7 @@ const onUpdate = async (
       const modifiedBoards = new Set<number>();
       const newStrokes = data.paths.map(async (path) => {
         modifiedBoards.add(boardId);
-        return Strokes.upsert({
+        return Stroke.upsert({
           strokeId: path.id,
           boardId: boardId,
           d: path.d,
@@ -33,7 +33,7 @@ const onUpdate = async (
         });
       });
 
-      const boardsToChange = await Boards.findAll({
+      const boardsToChange = await Board.findAll({
         where: { boardId: Array.from(modifiedBoards) },
       });
       const updatedBoards = boardsToChange.map((board) => {
@@ -45,14 +45,14 @@ const onUpdate = async (
       return data satisfies ServerBoardUpdate;
     }
     case "DELETE_PATHS": {
-      await Strokes.destroy({ where: { strokeId: data.ids } });
+      await Stroke.destroy({ where: { strokeId: data.ids } });
       return data satisfies ServerBoardUpdate;
     }
   }
 };
 
 const initialLoad = async (boardId: string): Promise<ServerBoardUpdate | null> => {
-  const strokes = await Strokes.findAll({ where: { boardId } });
+  const strokes = await Stroke.findAll({ where: { boardId } });
   if (!strokes || strokes.length === 0) {
     return null;
   }
