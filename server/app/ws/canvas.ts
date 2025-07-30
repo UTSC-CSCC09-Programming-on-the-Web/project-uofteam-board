@@ -16,9 +16,9 @@ const onUpdate = async (
   switch (data.type) {
     case "CREATE_OR_REPLACE_PATHS": {
       const modifiedBoards = new Set<number>();
-      const newStrokes = data.paths.map(async (path) => {
+      const formattedStrokes = data.paths.map((path) => {
         modifiedBoards.add(boardId);
-        return Stroke.upsert({
+        return {
           strokeId: path.id,
           boardId: boardId,
           d: path.d,
@@ -30,9 +30,11 @@ const onUpdate = async (
           scaleX: path.scaleX,
           scaleY: path.scaleY,
           rotation: path.rotation,
-        });
+        }
       });
+      const newStrokes = Stroke.bulkCreate(formattedStrokes);
 
+      // Sequelize will not allow a way to do this in bulk
       const boardsToChange = await Board.findAll({
         where: { boardId: Array.from(modifiedBoards) },
       });
@@ -41,7 +43,7 @@ const onUpdate = async (
         return board.update({ updatedAt: new Date() });
       });
 
-      await Promise.allSettled([...newStrokes, ...updatedBoards]);
+      await Promise.allSettled([newStrokes, ...updatedBoards]);
       return data satisfies ServerBoardUpdate;
     }
     case "DELETE_PATHS": {
@@ -97,7 +99,6 @@ export const registerWebSocket = (io: Server) => {
     }
 
     // Add to the mapping, enforce one session per user
-    // TODO: kick the old one? or reject the new one?
     const prevSocketId = await getUserSocketId(session.user.id);
     if (prevSocketId) disconnectSocket(prevSocketId);
     setUserSocketId(session.user.id, socket.id);
