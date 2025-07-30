@@ -47,6 +47,31 @@ jobs:
           key: ${{ secrets.VM_SSH_KEY }}
           passphrase: ${{ secrets.VM_SSH_PASSPHRASE }}
           script: |
+            cat <<EOF > .env
+            ACME_EMAIL=${{ vars.ACME_EMAIL }}
+            CLIENT_SSL_HOSTS=${{ vars.CLIENT_SSL_HOSTS }}
+            SERVER_SSL_HOSTS=${{ vars.SERVER_SSL_HOSTS }}
+            SERVER_PORT=${{ vars.SERVER_PORT }}
+            GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}
+            GOOGLE_REDIRECT_URL=${{ vars.GOOGLE_REDIRECT_URL }}
+            CLIENT_ORIGIN_URLS=${{ vars.CLIENT_ORIGIN_URLS }}
+            CLIENT_URL=${{ vars.CLIENT_URL }}
+            DB_USER=${{ vars.DB_USER }}
+            DB_NAME=${{ vars.DB_NAME }}
+            DB_HOST=${{ vars.DB_HOST }}
+            DB_PORT=${{ vars.DB_PORT }}
+            REDIS_HOST=${{ vars.REDIS_HOST }}
+            REDIS_PORT=${{ vars.REDIS_PORT }}
+
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            SERVER_SESSION_SECRET=${{ secrets.SERVER_SESSION_SECRET }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+            STRIPE_API_SECRET=${{ secrets.STRIPE_API_SECRET }}
+            REDIS_PASS=${{ secrets.REDIS_PASS }}
+            DB_PASS=${{ secrets.DB_PASS }}
+            EOF
+
             docker login ghcr.io -u joshuajadaniel -p ${{ secrets.CR_PAT }}
             docker compose pull
             docker compose up -d
