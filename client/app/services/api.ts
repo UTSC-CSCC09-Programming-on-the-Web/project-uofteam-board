@@ -142,7 +142,7 @@ class ApiService {
       if (config.LOGGING_ENABLED) console.log(`Emitting update for board ${boardID}:`, update);
       this.socket.emit("update", update);
     } else if (config.LOGGING_ENABLED) {
-      console.warn(`Socket for board ${boardID} is not connected. Cannot emit update.`);
+      console.warn(`Socket for board ${boardID} is not connected. Cannot emit update.`, update);
     }
   }
 
