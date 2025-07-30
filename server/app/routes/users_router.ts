@@ -6,6 +6,7 @@ import { getGoogleAuth, authParams, links } from "#services/googleoauth.js";
 import { SessionData } from "express-session";
 import { create_checkout_session } from "#services/stripecheckout.js";
 import { disconnectUserSocket } from "#ws/canvas.js";
+import { generateToken, getTokenFromState, invalidCsrfTokenError } from "#services/csrftoken.js";
 
 export const usersRouter = Router();
 
@@ -20,6 +21,14 @@ usersRouter.get("/me/picture", checkAuth(false), async (req, res) => {
 });
 
 usersRouter.get("/login/callback", async (req, res) => {
+  // Check state for CSRF
+  const csrfToken = req.query.state;
+  if (csrfToken !== getTokenFromState(req)) {
+    res.redirect(`${links.clientUrl}`);
+    console.error("Got Invalid CSRF Token from Ouath Callback", req.query)
+    return;
+  }
+
   const code = req.query.code?.toString();
   const data = await getGoogleAuth(code);
   if (!data) {
@@ -53,7 +62,7 @@ usersRouter.get("/login/callback", async (req, res) => {
 
 usersRouter.get("/login", async (req, res) => {
   res.json({
-    url: `${links.authUrl}?${authParams}`,
+    url: `${links.authUrl}?${authParams(generateToken(req, true))}`,
   } satisfies UrlLink);
 });
 
