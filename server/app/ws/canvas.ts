@@ -30,10 +30,21 @@ const onUpdate = async (
           scaleX: path.scaleX,
           scaleY: path.scaleY,
           rotation: path.rotation,
-        }
+        };
       });
       const newStrokes = Stroke.bulkCreate(formattedStrokes, {
-        updateOnDuplicate: ["boardId", "d", "color", "width", "fillColor", "x", "y", "scaleX", "scaleY", "rotation"]
+        updateOnDuplicate: [
+          "boardId",
+          "d",
+          "color",
+          "width",
+          "fillColor",
+          "x",
+          "y",
+          "scaleX",
+          "scaleY",
+          "rotation",
+        ],
       });
 
       // Sequelize will not allow a way to do this in bulk
