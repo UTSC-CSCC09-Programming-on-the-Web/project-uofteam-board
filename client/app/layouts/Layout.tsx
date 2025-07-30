@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import { useState } from "react";
 import { Outlet, useNavigate, useNavigation } from "react-router";
+import { MdLogout } from "react-icons/md";
 import toast from "react-hot-toast";
 
 import { Header } from "~/components";
@@ -8,10 +9,22 @@ import { API } from "~/services";
 
 import styles from "./Layout.module.css";
 
-export default function Layout() {
+const Layout = () => {
   const navigate = useNavigate();
   const navigation = useNavigation();
   const [signingOut, setSigningOut] = useState(false);
+
+  const handleLogout = async () => {
+    setSigningOut(true);
+    const res = await API.postLogout();
+    if (res.error !== null) {
+      toast(`Logout failed:\n ${res.error}`);
+      setSigningOut(false);
+      return;
+    }
+
+    navigate("/");
+  };
 
   return (
     <div className="min-h-screen bg-yellow-50">
@@ -24,19 +37,9 @@ export default function Layout() {
           {
             label: "Sign out",
             variant: "neutral",
+            icon: <MdLogout />,
             loading: signingOut,
-            onClick: async () => {
-              setSigningOut(true);
-              const res = await API.postLogout();
-              if (res.error !== null) {
-                toast(`Logout failed:\n ${res.error}`);
-                setSigningOut(false);
-                return;
-              }
-
-              navigate("/");
-              setSigningOut(false);
-            },
+            onClick: handleLogout,
           },
         ]}
       />
@@ -45,7 +48,7 @@ export default function Layout() {
           <div
             className={clsx(
               "h-full w-1/3 bg-gradient-to-r from-transparent via-yellow-800 to-transparent",
-              styles.progressBar,
+              styles["progress-bar"],
             )}
           />
         </div>
@@ -55,4 +58,6 @@ export default function Layout() {
       </div>
     </div>
   );
-}
+};
+
+export default Layout;
