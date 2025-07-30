@@ -432,32 +432,33 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
     });
   };
 
-  const handlePathDragEnd = (e: Konva.KonvaEventObject<Event>) => {
-    const node = e.target;
-    const id = node.id();
-    setPaths((prev) =>
-      prev.map((p) => {
-        if (p.id === id) {
-          p = { ...p, x: node.x(), y: node.y() };
-          API.emitBoardUpdate(boardID, { type: "CREATE_OR_REPLACE_PATHS", paths: [p] });
-        }
-        return p;
-      }),
-    );
-  };
+  const handleTransform = () => {
+    const nodes = transformerRef.current?.nodes();
+    if (!nodes || nodes.length === 0) return;
 
-  const handlePathTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
-    const node = e.target;
-    const id = node.id();
-    setPaths((prev) =>
-      prev.map((p) => {
-        if (p.id === id) {
-          p = { ...p, x: node.x(), y: node.y(), scaleX: node.scaleX(), scaleY: node.scaleY(), rotation: node.rotation() }; // prettier-ignore
-          API.emitBoardUpdate(boardID, { type: "CREATE_OR_REPLACE_PATHS", paths: [p] });
-        }
-        return p;
-      }),
-    );
+    const updates = new Map<string, Partial<Path>>();
+    nodes.forEach((node) => {
+      updates.set(node.id(), {
+        x: node.x(),
+        y: node.y(),
+        rotation: node.rotation(),
+        scaleX: node.scaleX(),
+        scaleY: node.scaleY(),
+      });
+    });
+
+    setPaths((prev) => {
+      const pathsToEmit: Path[] = [];
+      const updatedPaths = prev.map((p) => {
+        const update = updates.get(p.id);
+        if (update) pathsToEmit.push({ ...p, ...update });
+        return update ? { ...p, ...update } : p;
+      });
+
+      const update = { type: "CREATE_OR_REPLACE_PATHS", paths: pathsToEmit } as const;
+      if (update.paths.length > 0) API.emitBoardUpdate(boardID, update);
+      return updatedPaths;
+    });
   };
 
   const handleGenFillConfirm = (oldPaths: Path[], newPaths: Path[]) => {
@@ -763,18 +764,20 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
                 scaleX={path.scaleX}
                 scaleY={path.scaleY}
                 rotation={path.rotation}
-                draggable={isSelected}
-                listening={isSelected}
+                listening={false}
                 ref={(node) => {
                   if (node) pathRefs.current.set(path.id, node);
                   else pathRefs.current.delete(path.id);
                 }}
-                onDragEnd={handlePathDragEnd}
-                onTransformEnd={handlePathTransformEnd}
               />
             );
           })}
-          <Transformer ref={transformerRef} shouldOverdrawWholeArea />
+          <Transformer
+            ref={transformerRef}
+            onDragEnd={handleTransform}
+            onTransformEnd={handleTransform}
+            shouldOverdrawWholeArea
+          />
           <Rect
             ref={selectionRectRef}
             fill={colors.blue["400"]}
