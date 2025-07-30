@@ -222,6 +222,12 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
   }, [selectedIDs]);
 
   const handleMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (boardStateRef.current.type !== "IDLE") {
+      // End any ongoing drawing or selection
+      handleMouseUp(e);
+      return;
+    }
+
     if (spacePressed || board === null || board.permission === "viewer") return;
     const stage = e.target.getStage();
     if (!stage) return;
