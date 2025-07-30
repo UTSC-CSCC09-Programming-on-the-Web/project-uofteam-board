@@ -176,10 +176,14 @@ class ApiService {
 
   private async request<T>(config: AxiosRequestConfig): Promise<Response<T>> {
     if (config.method !== "get" && this.csrfToken === null) await this.getCsrfToken();
-    const res = await this.plainRequest<T>({...config, headers: { 'x-csrf-token': this.csrfToken }});
-    if (res.status === 403) {   // Retry with new token (in case session expired)
+    const res = await this.plainRequest<T>({
+      ...config,
+      headers: { "x-csrf-token": this.csrfToken },
+    });
+    if (res.status === 403) {
+      // Retry with new token (in case session expired)
       await this.getCsrfToken();
-      return await this.plainRequest<T>({...config, headers: { 'x-csrf-token': this.csrfToken }});
+      return await this.plainRequest<T>({ ...config, headers: { "x-csrf-token": this.csrfToken } });
     }
     return res;
   }

@@ -56,11 +56,14 @@ stripeWebhook.post("/webhook", express.raw({ type: "application/json" }), async 
     return;
   }
   res.sendStatus(200); // Acknowledge
-  
+
   // Not an event we handle
-  if (event.type !== 'customer.subscription.deleted' &&
-      event.type !== 'customer.subscription.updated' &&
-      event.type !== 'checkout.session.completed') return;
+  if (
+    event.type !== "customer.subscription.deleted" &&
+    event.type !== "customer.subscription.updated" &&
+    event.type !== "checkout.session.completed"
+  )
+    return;
 
   // Confirm validity and add to record
   console.log("[STRIPE WEBHOOK] Got event", event.id);

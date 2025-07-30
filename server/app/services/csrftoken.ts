@@ -6,12 +6,7 @@ const {
   generateToken, // Use this in your routes to generate, store, and get a CSRF token.
   csrfSynchronisedProtection, // This is the default CSRF protection middleware.
 } = csrfSync({
-  ignoredMethods: ["GET", "HEAD", "OPTIONS"],  // Default
+  ignoredMethods: ["GET", "HEAD", "OPTIONS"], // Default
 });
 
-export {
-  invalidCsrfTokenError,
-  getTokenFromState,
-  generateToken,
-  csrfSynchronisedProtection
-};
+export { invalidCsrfTokenError, getTokenFromState, generateToken, csrfSynchronisedProtection };

@@ -25,7 +25,7 @@ usersRouter.get("/login/callback", async (req, res) => {
   const csrfToken = req.query.state;
   if (csrfToken !== getTokenFromState(req)) {
     res.redirect(`${links.clientUrl}`);
-    console.error("Got Invalid CSRF Token from Ouath Callback", req.query)
+    console.error("Got Invalid CSRF Token from Ouath Callback", req.query);
     return;
   }
 
@@ -71,11 +71,11 @@ usersRouter.post("/logout", checkAuth(false), async (req, res) => {
   if (!sessionUser) {
     throw new Error("No user session found for logout");
   }
-  
+
   disconnectUserSocket(sessionUser.id);
   req.session.destroy((err) => {
     if (err) {
-      res.clearCookie('connect.sid');
+      res.clearCookie("connect.sid");
       console.error("Failed to destory session!");
       throw err;
     } else {

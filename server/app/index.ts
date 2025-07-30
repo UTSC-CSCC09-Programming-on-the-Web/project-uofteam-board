@@ -65,7 +65,7 @@ const sessionMiddleware = session({
   cookie: {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax", // CSRF protection
-    maxAge: 1000 * 60 * 60 * 24 // 24 hours
+    maxAge: 1000 * 60 * 60 * 24, // 24 hours
   },
 });
 app.use(sessionMiddleware);
@@ -90,13 +90,20 @@ app.use("/api/boards", boardsRouter);
 app.use("/api/stripe", stripeRouter);
 
 // Handle CSRF errors
-app.use((err: Error & { code?: string}, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (err?.code !== 'EBADCSRFTOKEN') {
-    next();
-    return;
-  }
-  res.status(403).json({ error: "CSRF Token validation failed" });
-});
+app.use(
+  (
+    err: Error & { code?: string },
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ) => {
+    if (err?.code !== "EBADCSRFTOKEN") {
+      next();
+      return;
+    }
+    res.status(403).json({ error: "CSRF Token validation failed" });
+  },
+);
 
 // Universal error handler
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

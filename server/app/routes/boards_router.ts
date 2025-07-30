@@ -13,7 +13,8 @@ import AsyncLock from "async-lock";
 export const boardsRouter = express.Router();
 
 const checkValidBoardName = (res: express.Response, name: string): boolean => {
-  if (!/^[\w ]+$/i.test(name)) { // Check Alphanumeric
+  if (!/^[\w ]+$/i.test(name)) {
+    // Check Alphanumeric
     res.status(422).json({ error: "Board name must be strictly alphanumeric" });
     return false;
   }
@@ -26,7 +27,7 @@ const checkValidBoardName = (res: express.Response, name: string): boolean => {
     return false;
   }
   return true;
-}
+};
 
 boardsRouter.post("/", checkAuth(), async (req, res) => {
   const { name } = req.body;
@@ -34,7 +35,8 @@ boardsRouter.post("/", checkAuth(), async (req, res) => {
     res.status(400).json({ error: "Board name is required" });
     return;
   }
-  if(!checkValidBoardName(res, name)) { // Will handle the response
+  if (!checkValidBoardName(res, name)) {
+    // Will handle the response
     return;
   }
 
@@ -155,7 +157,8 @@ boardsRouter.patch("/:id", checkAuth(), async (req, res) => {
     res.status(400).json({ error: "Board name is required" });
     return;
   }
-  if(!checkValidBoardName(res, name)) { // Will handle the response
+  if (!checkValidBoardName(res, name)) {
+    // Will handle the response
     return;
   }
 
@@ -246,5 +249,5 @@ boardsRouter.post("/:id/generative-fill", checkAuth(), async (req, res) => {
       console.error("Error generating new image:", err);
       return;
     }
-  })
+  });
 });
