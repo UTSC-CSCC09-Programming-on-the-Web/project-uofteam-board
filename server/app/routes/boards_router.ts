@@ -1,6 +1,6 @@
 import express from "express";
 import { Op } from "sequelize";
-import { Board } from "#models/Boards.js";
+import { Board as BoardTable } from "#models/Boards.js";
 import type { Board, BoardPermission, Paginated, Path } from "#types/api.js";
 import { checkAuth } from "#middleware/checkAuth.js";
 import { render } from "#image-ai/render.js";
@@ -40,7 +40,7 @@ boardsRouter.post("/", checkAuth(), async (req, res) => {
     return;
   }
 
-  const newBoard = await Board.create({ name });
+  const newBoard = await BoardTable.create({ name });
   const newBoardShare = await BoardShare.create({
     boardId: newBoard.boardId,
     userId: req.session.user?.id,
@@ -66,7 +66,7 @@ boardsRouter.get("/", checkAuth(), async (req, res) => {
       userId: req.session.user?.id,
     },
     include: {
-      model: Board,
+      model: BoardTable,
       ...(query && {
         where: {
           name: {
@@ -77,7 +77,7 @@ boardsRouter.get("/", checkAuth(), async (req, res) => {
     },
     offset: (page - 1) * limit,
     limit,
-    order: [[Board, "createdAt", "DESC"]],
+    order: [[BoardTable, "createdAt", "DESC"]],
   });
 
   const totalPages = Math.ceil(totalItems / limit) || 1;
@@ -110,7 +110,7 @@ boardsRouter.get("/:id", checkAuth(), async (req, res) => {
       userId: req.session.user?.id,
     },
     include: {
-      model: Board,
+      model: BoardTable,
     },
   });
   if (!board) {
@@ -177,7 +177,7 @@ boardsRouter.patch("/:id", checkAuth(), async (req, res) => {
     return;
   }
 
-  const board = await Board.findByPk(boardShare.boardId);
+  const board = await BoardTable.findByPk(boardShare.boardId);
   if (!board) throw Error("Board share referencing non-existant board!");
   board.name = name;
   await board.save();
@@ -210,7 +210,7 @@ boardsRouter.delete("/:id", checkAuth(), async (req, res) => {
     return;
   }
 
-  const board = await Board.findByPk(boardShare.boardId);
+  const board = await BoardTable.findByPk(boardShare.boardId);
   if (!board) throw Error("Board share referencing non-existant board!");
   await board.destroy();
 
@@ -229,7 +229,7 @@ boardsRouter.post("/:id/generative-fill", checkAuth(), async (req, res) => {
 
   const { pathIDs } = req.body;
   const { id } = req.params;
-  if (!id || !(await Board.findByPk(id))) {
+  if (!id || !(await BoardTable.findByPk(id))) {
     res.status(404).json({ error: "Board not found" });
     return;
   }

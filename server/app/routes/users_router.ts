@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { User } from "#models/Users.js";
+import { User as UserTable } from "#models/Users.js";
 import type { UrlLink, User } from "#types/api.js";
 import { checkAuth, checkPaid } from "#middleware/checkAuth.js";
 import { getGoogleAuth, authParams, links } from "#services/googleoauth.js";
@@ -15,7 +15,7 @@ usersRouter.get("/me", checkAuth(false), async (req, res) => {
 });
 
 usersRouter.get("/me/picture", checkAuth(false), async (req, res) => {
-  const userInfo = await User.findByPk(req.session.user?.id);
+  const userInfo = await UserTable.findByPk(req.session.user?.id);
   if (!userInfo) throw Error("Got authenticated request for non-existant user!");
   res.redirect(302, userInfo.pictureUrl);
 });
@@ -37,9 +37,9 @@ usersRouter.get("/login/callback", async (req, res) => {
   }
   const { email, name, picture } = data;
 
-  let user = await User.findOne({ where: { email } });
+  let user = await UserTable.findOne({ where: { email } });
   if (!user) {
-    user = await User.create({ name, email, pictureUrl: picture });
+    user = await UserTable.create({ name, email, pictureUrl: picture });
   }
 
   const paid = await checkPaid(user.userId);
