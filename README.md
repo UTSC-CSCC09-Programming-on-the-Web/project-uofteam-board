@@ -1,6 +1,7 @@
 # Project: UofTeam Board
 
 Project Website: https://uofteamboard.app
+Demo: https://youtu.be/6Uk0x5-IoiM
 
 
 ## Team members
