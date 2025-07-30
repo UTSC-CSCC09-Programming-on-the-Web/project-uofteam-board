@@ -5,6 +5,7 @@ import { checkAuth, checkPaid } from "#middleware/checkAuth.js";
 import { getGoogleAuth, authParams, links } from "#services/googleoauth.js";
 import { SessionData } from "express-session";
 import { create_checkout_session } from "#services/stripecheckout.js";
+import { disconnectUserSocket } from "#ws/canvas.js";
 
 export const usersRouter = Router();
 
@@ -15,15 +16,8 @@ usersRouter.get("/me", checkAuth(false), async (req, res) => {
 usersRouter.get("/me/picture", checkAuth(false), async (req, res) => {
   const userInfo = await Users.findByPk(req.session.user?.id);
   if (!userInfo) throw Error("Got authenticated request for non-existant user!")
-
-  const expirationDate = new Date();
-  expirationDate.setDate(expirationDate.getDate() + 1);
-
-  res.setHeader('Cache-Control', 'public, max-age=86400');
-  res.setHeader('Expires', expirationDate.toUTCString());     // Legacy
-
   res.redirect(302, userInfo.pictureUrl);
-})
+});
 
 usersRouter.get("/login/callback", async (req, res) => {
   const code = req.query.code?.toString();
@@ -38,7 +32,7 @@ usersRouter.get("/login/callback", async (req, res) => {
   if (!user) {
     user = await Users.create({ name, email, pictureUrl: picture });
   }
-
+  
   const paid = await checkPaid(user.userId);
   req.session.user = {
     id: user.userId,
@@ -74,4 +68,6 @@ usersRouter.post("/logout", checkAuth(false), async (req, res) => {
     name: sessionUser.name,
     email: sessionUser.email,
   } satisfies User);
+
+  disconnectUserSocket(sessionUser.id);
 });

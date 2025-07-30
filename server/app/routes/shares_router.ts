@@ -146,8 +146,8 @@ sharesSubRouter.post("/update", checkAuth(), async (req, res) => {
       continue;
     }
 
-    // TODO: find a way to assert type at runtime
-    boardShare.permission = update.permission as BoardPermission;
+    if (!['viewer', 'editor'].includes(update.permission)) continue;
+    boardShare.permission = update.permission;
     await boardShare.save();
     const saved = boardShare.get({ plain: true });
 

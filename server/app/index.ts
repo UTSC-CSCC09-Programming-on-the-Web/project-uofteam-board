@@ -10,7 +10,8 @@ import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import { registerWebSocket } from "#ws/canvas.js";
-import { redisClient } from "#config/redis.js";
+import { redisCacheClient, redisSessionClient } from "#config/redis.js";
+import { saveSessionStore } from "#services/sessionstore.js";
 
 if (!process.env.SECRET_KEY) {
   console.warn("SECRET_KEY is not set. Using default secret key for session management.");
@@ -31,10 +32,36 @@ app.use(logger);
 // Cross-Origin Resource Sharing
 app.use(cors(corsConfig));
 
+// Connect to PostgreSQL
+try {
+  await sequelize.authenticate();
+  await sequelize.sync({ alter: { drop: false } });
+  console.log("PostgreSQL has been established successfully.");
+} catch (error) {
+  console.error("Unable to connect to the database:", error);
+}
+
+// Connect to Redis
+try {
+  await redisCacheClient.connect();
+  await redisSessionClient.connect();
+} catch (error) {
+  console.error("Unable to connect to redis:", error)
+}
+
+// Create session store
+const sessionStore = saveSessionStore(redisSessionClient);
+
+// Cookie
 const sessionMiddleware = session({
+  store: sessionStore,
   secret: process.env.SECRET_KEY || "default_secret_key",
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false, // Don't create session until something stored
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' // CSRF protection
+  }
 });
 app.use(sessionMiddleware);
 
@@ -47,35 +74,20 @@ const io = new Server(server, {
 io.engine.use(sessionMiddleware);
 registerWebSocket(io);
 
-try {
-  await sequelize.authenticate();
-  await sequelize.sync({ alter: { drop: false } });
-  console.log("PostgreSQL has been established successfully.");
-} catch (error) {
-  console.error("Unable to connect to the database:", error);
-}
-
-try {
-  await redisClient.connect();
-} catch (error) {
-  console.error("Unable to connect to redis:", error)
-}
-
-app.get("/", (req, res) => {
-  res.end();
-});
-
+// Attach routers for endpoints
 boardsRouter.use("/:id/shares", sharesSubRouter);
 app.use("/api/auth", usersRouter);
 app.use("/api/boards", boardsRouter);
 app.use("/api/stripe", stripeRouter);
 
+// Universal error handler
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack || err);
   res.status(500).json({ error: "Internal Server Error" });
   next(err);
 });
 
+// Begin listening
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, (err?: Error) => {
   if (err) {
