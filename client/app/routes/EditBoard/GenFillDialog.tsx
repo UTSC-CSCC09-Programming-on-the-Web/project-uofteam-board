@@ -17,7 +17,7 @@ interface Generation {
 }
 
 interface GenFillDialogState {
-  boardID: string;
+  boardID: number;
   paths: Path[];
 }
 

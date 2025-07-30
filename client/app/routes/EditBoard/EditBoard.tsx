@@ -64,6 +64,7 @@ type Tool = "SELECTION" | "PEN" | "RECTANGLE" | "CIRCLE";
 const strokeWidthOptions = [2, 4, 8, 16];
 
 const EditBoard = ({ params }: Route.ComponentProps) => {
+  const boardID = Number(params.bid);
   const navigate = useNavigate();
   const mousePressed = useMousePressed();
   const spacePressed = useSpacePressed();
@@ -96,58 +97,61 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
   const boardStateRef = useRef<BoardState>({ type: "IDLE" });
   const latestReqID = useRef(0);
 
-  const fetchBoard = useCallback(async (reconnecting: boolean, boardID: number) => {
-    setBoardLoading(true);
-    const reqID = ++latestReqID.current;
-    const [boardRes, boardSharesRes] = await Promise.all([
-      API.getBoard(boardID),
-      API.getBoardShares(boardID),
-    ]);
-    if (reqID !== latestReqID.current) return;
+  const fetchBoard = useCallback(
+    async (reconnecting: boolean) => {
+      setBoardLoading(true);
+      const reqID = ++latestReqID.current;
+      const [boardRes, boardSharesRes] = await Promise.all([
+        API.getBoard(boardID),
+        API.getBoardShares(boardID),
+      ]);
+      if (reqID !== latestReqID.current) return;
 
-    for (const res of [boardRes, boardSharesRes]) {
-      if (res.error !== null) {
-        if (res.status === 401) {
-          if (reconnecting) {
-            toast("Looks like your login session has expired.");
-            setBoardLoading(false);
+      for (const res of [boardRes, boardSharesRes]) {
+        if (res.error !== null) {
+          if (res.status === 401) {
+            if (reconnecting) {
+              toast("Looks like your login session has expired.");
+              setBoardLoading(false);
+            } else {
+              navigate("/?error=not_logged_in");
+            }
+          } else if (res.status === 403) {
+            toast(res.error);
+            if (reconnecting) setBoardLoading(false);
+            else navigate("/dashboard");
+          } else if (res.status === 404) {
+            toast(`Board #${boardID} does not exist, or you don't have access to it.`);
+            if (reconnecting) setBoardLoading(false);
+            else navigate("/dashboard");
           } else {
-            navigate("/?error=not_logged_in");
+            toast(`Unexpected error fetching board:\n ${res.error}`);
+            setLostAccessDialogOpen(true);
+            setBoardLoading(false);
           }
-        } else if (res.status === 403) {
-          toast(res.error);
-          if (reconnecting) setBoardLoading(false);
-          else navigate("/dashboard");
-        } else if (res.status === 404) {
-          toast(`Board #${boardID} does not exist, or you don't have access to it.`);
-          if (reconnecting) setBoardLoading(false);
-          else navigate("/dashboard");
-        } else {
-          toast(`Unexpected error fetching board:\n ${res.error}`);
-          setLostAccessDialogOpen(true);
-          setBoardLoading(false);
+          return;
         }
+      }
+
+      if (boardRes.data === null || boardSharesRes.data === null) {
+        // This should never happen, but it satisfies TypeScript
+        toast("Unexpected state reached!");
+        setLostAccessDialogOpen(true);
+        setBoardLoading(false);
         return;
       }
-    }
 
-    if (boardRes.data === null || boardSharesRes.data === null) {
-      // This should never happen, but it satisfies TypeScript
-      toast("Unexpected state reached!");
-      setLostAccessDialogOpen(true);
+      setBoard(boardRes.data);
+      setShares(boardSharesRes.data);
+      setLostAccessDialogOpen(false);
       setBoardLoading(false);
-      return;
-    }
-
-    setBoard(boardRes.data);
-    setShares(boardSharesRes.data);
-    setLostAccessDialogOpen(false);
-    setBoardLoading(false);
-  }, []);
+    },
+    [boardID],
+  );
 
   useEffect(() => {
-    fetchBoard(false, Number(params.bid));
-  }, [params.bid, fetchBoard]);
+    fetchBoard(false);
+  }, [fetchBoard]);
 
   useEffect(() => {
     if (!board) return;
@@ -363,17 +367,17 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
       }
       case "DRAWING_FREEHAND": {
         bs.path.d = makeLineData(bs.path.d, point);
-        API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [bs.path] });
+        API.emitBoardUpdate(boardID, { type: "CREATE_OR_REPLACE_PATHS", paths: [bs.path] });
         break;
       }
       case "DRAWING_RECTANGLE": {
         bs.path.d = makeRectData({ start: bs.start, end: point });
-        API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [bs.path] });
+        API.emitBoardUpdate(boardID, { type: "CREATE_OR_REPLACE_PATHS", paths: [bs.path] });
         break;
       }
       case "DRAWING_CIRCLE": {
         bs.path.d = makeCircleData({ start: bs.start, end: point });
-        API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [bs.path] });
+        API.emitBoardUpdate(boardID, { type: "CREATE_OR_REPLACE_PATHS", paths: [bs.path] });
         break;
       }
       default: {
@@ -435,7 +439,7 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
       prev.map((p) => {
         if (p.id === id) {
           p = { ...p, x: node.x(), y: node.y() };
-          API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [p] });
+          API.emitBoardUpdate(boardID, { type: "CREATE_OR_REPLACE_PATHS", paths: [p] });
         }
         return p;
       }),
@@ -449,7 +453,7 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
       prev.map((p) => {
         if (p.id === id) {
           p = { ...p, x: node.x(), y: node.y(), scaleX: node.scaleX(), scaleY: node.scaleY(), rotation: node.rotation() }; // prettier-ignore
-          API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: [p] });
+          API.emitBoardUpdate(boardID, { type: "CREATE_OR_REPLACE_PATHS", paths: [p] });
         }
         return p;
       }),
@@ -459,8 +463,8 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
   const handleGenFillConfirm = (oldPaths: Path[], newPaths: Path[]) => {
     newPaths = newPaths.map((p) => ({ ...p, fromLocal: true }));
     setPaths((prev) => prev.filter((p) => !oldPaths.some((op) => op.id === p.id)).concat(newPaths));
-    API.emitBoardUpdate(params.bid, { type: "DELETE_PATHS", ids: oldPaths.map((p) => p.id) });
-    API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: newPaths });
+    API.emitBoardUpdate(boardID, { type: "DELETE_PATHS", ids: oldPaths.map((p) => p.id) });
+    API.emitBoardUpdate(boardID, { type: "CREATE_OR_REPLACE_PATHS", paths: newPaths });
   };
 
   const handleSettingsUpdate = (board: Board, shares: BoardShare[]) => {
@@ -471,7 +475,7 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
   const handleDelete = useCallback(() => {
     if (selectedIDs.length === 0) return;
     setPaths((prev) => prev.filter((path) => !selectedIDs.includes(path.id)));
-    API.emitBoardUpdate(params.bid, { type: "DELETE_PATHS", ids: selectedIDs });
+    API.emitBoardUpdate(boardID, { type: "DELETE_PATHS", ids: selectedIDs });
     setSelectedIDs([]);
   }, [selectedIDs, params.bid]);
 
@@ -493,9 +497,9 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
       return;
     }
 
-    setGenFillState({ boardID: params.bid, paths: selectedPaths });
+    setGenFillState({ boardID, paths: selectedPaths });
     setSelectedIDs([]);
-  }, [selectedIDs, paths, params.bid]);
+  }, [selectedIDs, paths, boardID]);
 
   const handleUpdateFillColor = (color: string) => {
     setFillColor(color);
@@ -504,7 +508,7 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
     const coalesceColor = (prev: string) => (prev === "transparent" ? "transparent" : color);
     const updatedPaths = selectedPaths.map((p) => ({ ...p, fillColor: coalesceColor(p.fillColor) })); // prettier-ignore
     setPaths((prev) => prev.map((p) => selectedIDs.includes(p.id) ? { ...p, fillColor: coalesceColor(p.fillColor) } : p)); // prettier-ignore
-    API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: updatedPaths });
+    API.emitBoardUpdate(boardID, { type: "CREATE_OR_REPLACE_PATHS", paths: updatedPaths });
   };
 
   const handleUpdateStrokeColor = (strokeColor: string) => {
@@ -513,7 +517,7 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
     const selectedPaths = paths.filter((p) => selectedIDs.includes(p.id));
     const updatedPaths = selectedPaths.map((p) => ({ ...p, strokeColor }));
     setPaths((prev) => prev.map((p) => (selectedIDs.includes(p.id) ? { ...p, strokeColor } : p)));
-    API.emitBoardUpdate(params.bid, { type: "CREATE_OR_REPLACE_PATHS", paths: updatedPaths });
+    API.emitBoardUpdate(boardID, { type: "CREATE_OR_REPLACE_PATHS", paths: updatedPaths });
   };
 
   useEffect(() => {
@@ -539,7 +543,7 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
           beforeConnection
           open={lostAccessDialogOpen}
           onBack={() => navigate("/dashboard")}
-          onRetry={() => fetchBoard(true, Number(params.bid))}
+          onRetry={() => fetchBoard(true)}
           retrying={boardLoading}
         />
       </>
@@ -800,7 +804,7 @@ const EditBoard = ({ params }: Route.ComponentProps) => {
         beforeConnection={false}
         open={lostAccessDialogOpen}
         onBack={() => navigate("/dashboard")}
-        onRetry={() => fetchBoard(true, Number(params.bid))}
+        onRetry={() => fetchBoard(true)}
         retrying={boardLoading}
       />
     </>

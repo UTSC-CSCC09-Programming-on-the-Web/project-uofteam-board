@@ -129,21 +129,21 @@ class ApiService {
     };
   }
 
-  public emitBoardUpdate(id: string, update: ClientBoardUpdate): void {
+  public emitBoardUpdate(boardID: number, update: ClientBoardUpdate): void {
     if (this.socket?.connected) {
       console.log(`Emitting update:`, update);
       this.socket.emit("update", update);
     } else {
-      console.warn(`Socket for board ${id} is not connected. Cannot emit update.`);
+      console.warn(`Socket for board ${boardID} is not connected. Cannot emit update.`);
     }
   }
 
-  public getBoardPreviewImageURL(id: number): string {
-    return `${this.client.defaults.baseURL}/boards/${id}/picture`;
+  public getBoardPreviewImageURL(boardID: number): string {
+    return `${this.client.defaults.baseURL}/boards/${boardID}/picture`;
   }
 
-  public generativeFill(id: string, pathIDs: string[]): Promise<Response<Path[]>> {
-    return this.post(`/boards/${id}/generative-fill`, { pathIDs });
+  public generativeFill(boardID: number, pathIDs: string[]): Promise<Response<Path[]>> {
+    return this.post(`/boards/${boardID}/generative-fill`, { pathIDs });
   }
 
   // -------------------------------------------------------------------------------------------------------------------
