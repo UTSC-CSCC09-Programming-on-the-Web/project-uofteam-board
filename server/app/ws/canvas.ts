@@ -32,7 +32,9 @@ const onUpdate = async (
           rotation: path.rotation,
         }
       });
-      const newStrokes = Stroke.bulkCreate(formattedStrokes);
+      const newStrokes = Stroke.bulkCreate(formattedStrokes, {
+        updateOnDuplicate: ["boardId", "d", "color", "width", "fillColor", "x", "y", "scaleX", "scaleY", "rotation"]
+      });
 
       // Sequelize will not allow a way to do this in bulk
       const boardsToChange = await Board.findAll({

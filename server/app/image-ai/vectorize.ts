@@ -47,15 +47,14 @@ const convertSvgToPaths = (svg: string): Path[] => {
 
 export const vectorizeBase64 = async (base64: string): Promise<Path[]> => {
   const buffer = Buffer.from(base64, "base64");
-  // TODO: tweak for a good number of paths without excessive partitioning
   const svg = await vectorize(buffer, {
     colorMode: ColorMode.Color, // preserve color information
     colorPrecision: 6, // number of distinct colors
-    filterSpeckle: 4, // lower: keep more small details
-    spliceThreshold: 10, // lower: less joining, more separated paths
-    cornerThreshold: 20, // lower: split at more corners
+    filterSpeckle: 10, // lower: keep more small details
+    spliceThreshold: 50, // lower: less joining, more separated paths
+    cornerThreshold: 100, // lower: split at more corners
     layerDifference: 5, // difference between layers
-    lengthThreshold: 5, // lower: keep shorter paths
+    lengthThreshold: 50, // lower: keep shorter paths
     maxIterations: 2, // refinement iterations
     pathPrecision: 5, // path simplification accuracy
     hierarchical: Hierarchical.Cutout, // DO NOT CHANGE (ensures background removal)
