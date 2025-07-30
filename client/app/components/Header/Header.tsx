@@ -37,15 +37,15 @@ const Header = ({ links, buttons }: HeaderProps) => {
           </Link>
           <button
             onClick={toggleMenu}
-            className="size-[56px] bg-blue-800 hover:bg-blue-900 transition-colors hover:cursor-pointer flex items-center justify-center md:hidden"
+            className="size-[56px] transition-colors bg-blue-800 hover:bg-blue-900 cursor-pointer flex items-center justify-center md:hidden"
           >
             <FiMenu className="text-white text-2xl md:text-4xl" />
           </button>
         </div>
         <div
           className={clsx(
-            "flex-col px-4 pb-3 md:flex-row md:flex md:flex-1 md:justify-between md:items-center md:pb-0",
             open ? "flex" : "hidden",
+            "flex-col px-4 pb-3 md:flex-row md:flex md:flex-1 md:justify-between md:items-center md:pb-0",
           )}
         >
           <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-4">
