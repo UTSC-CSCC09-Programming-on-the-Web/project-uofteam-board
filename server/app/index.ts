@@ -16,7 +16,9 @@ if (!process.env.SECRET_KEY) {
 }
 
 const corsConfig = {
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  origin: process.env.CORS_CLIENT_URLS
+    ? process.env.CORS_CLIENT_URLS.split(",")
+    : "http://localhost:5173",
   credentials: true,
 };
 
