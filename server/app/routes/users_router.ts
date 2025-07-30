@@ -62,12 +62,19 @@ usersRouter.post("/logout", checkAuth(false), async (req, res) => {
   if (!sessionUser) {
     throw new Error("No user session found for logout");
   }
-  delete req.session.user;
-  res.json({
-    id: sessionUser.id,
-    name: sessionUser.name,
-    email: sessionUser.email,
-  } satisfies User);
-
+  
   disconnectUserSocket(sessionUser.id);
+  req.session.destroy((err) => {
+    if (err) {
+      res.clearCookie('connect.sid');
+      console.error("Failed to destory session!");
+      throw err;
+    } else {
+      res.json({
+        id: sessionUser.id,
+        name: sessionUser.name,
+        email: sessionUser.email,
+      } satisfies User);
+    }
+  });
 });

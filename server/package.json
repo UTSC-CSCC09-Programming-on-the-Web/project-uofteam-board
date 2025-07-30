@@ -22,6 +22,7 @@
     "connect-redis": "^9.0.0",
     "cookie": "^1.0.2",
     "cors": "^2.8.5",
+    "csrf-sync": "^4.2.1",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
     "konva": "^9.3.22",

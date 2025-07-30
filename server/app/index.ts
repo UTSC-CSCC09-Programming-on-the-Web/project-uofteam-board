@@ -12,6 +12,8 @@ import cors from "cors";
 import { registerWebSocket } from "#ws/canvas.js";
 import { redisCacheClient, redisSessionClient } from "#config/redis.js";
 import { saveSessionStore } from "#services/sessionstore.js";
+import { csrfTokenRouter } from "#routes/csrf_router.js";
+import * as csrf from "#services/csrftoken.js";
 
 if (!process.env.SECRET_KEY) {
   console.warn("SECRET_KEY is not set. Using default secret key for session management.");
@@ -28,7 +30,6 @@ const app = express();
 
 app.use("/api/stripe/", stripeWebhook); // Must be before the json parser
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
 app.use(logger);
 
 // Cross-Origin Resource Sharing
@@ -63,6 +64,7 @@ const sessionMiddleware = session({
   cookie: {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax", // CSRF protection
+    maxAge: 1000 * 60 * 60 * 24 // 24 hours
   },
 });
 app.use(sessionMiddleware);
@@ -76,17 +78,30 @@ const io = new Server(server, {
 io.engine.use(sessionMiddleware);
 registerWebSocket(io);
 
+// CSRF protection
+app.use("/api/csrf-token", csrfTokenRouter);
+app.use(csrf.csrfSynchronisedProtection);
+
 // Attach routers for endpoints
 boardsRouter.use("/:id/shares", sharesSubRouter);
 app.use("/api/auth", usersRouter);
 app.use("/api/boards", boardsRouter);
 app.use("/api/stripe", stripeRouter);
 
+// Handle CSRF errors
+app.use((err: Error & { code?: string}, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err?.code !== 'EBADCSRFTOKEN') {
+    next();
+    return;
+  }
+  res.status(403).json({ error: "CSRF Token validation failed" });
+});
+
 // Universal error handler
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack || err);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: Error, req: express.Request, res: express.Response, _: express.NextFunction) => {
+  console.error(err);
   res.status(500).json({ error: "Internal Server Error" });
-  next(err);
 });
 
 // Begin listening

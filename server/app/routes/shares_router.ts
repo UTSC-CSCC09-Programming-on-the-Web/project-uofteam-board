@@ -1,4 +1,4 @@
-import express from "express";
+import { Router } from "express";
 import { Boards } from "#models/Boards.js";
 import type { BoardPermission, BoardShare } from "#types/api.js";
 import { checkAuth } from "#middleware/checkAuth.js";
@@ -6,7 +6,7 @@ import { BoardShares } from "#models/BoardShares.js";
 import { Users } from "#models/Users.js";
 import { BoardShareUpdate } from "#types/api.js";
 
-export const sharesSubRouter = express.Router({ mergeParams: true });
+export const sharesSubRouter = Router({ mergeParams: true });
 
 sharesSubRouter.get("/", checkAuth(), async (req, res) => {
   const ALLOWED: BoardPermission[] = ["owner", "editor", "viewer"];

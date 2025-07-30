@@ -13,7 +13,7 @@ import AsyncLock from "async-lock";
 export const boardsRouter = express.Router();
 
 const checkValidBoardName = (res: express.Response, name: string): boolean => {
-  if (!/^[a-z0-9]+$/i.test(name)) { // Check Alphanumeric
+  if (!/^[\w ]+$/i.test(name)) { // Check Alphanumeric
     res.status(422).json({ error: "Board name must be strictly alphanumeric" });
     return false;
   }
