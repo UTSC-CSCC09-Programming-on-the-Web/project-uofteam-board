@@ -21,15 +21,16 @@ const config = {
   tokenExpiration: 300, // 5 minutes
 };
 
-export const authParams = queryString.stringify({
-  client_id: config.clientId,
-  redirect_uri: config.redirectUrl,
-  response_type: "code",
-  scope: "profile email",
-  access_type: "offline",
-  state: "standard_oauth",
-  prompt: "consent",
-});
+export const authParams = (csrfToken: string) =>
+  queryString.stringify({
+    client_id: config.clientId,
+    redirect_uri: config.redirectUrl,
+    response_type: "code",
+    scope: "profile email",
+    access_type: "offline",
+    state: csrfToken,
+    prompt: "consent",
+  });
 
 const getTokenParams = (code: string) =>
   queryString.stringify({

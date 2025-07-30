@@ -1,21 +1,21 @@
-import express from "express";
-import { Boards } from "#models/Boards.js";
+import { Router } from "express";
+import { Board as BoardTable } from "#models/Boards.js";
+import { BoardShare as BoardShareTable } from "#models/BoardShares.js";
 import type { BoardPermission, BoardShare } from "#types/api.js";
 import { checkAuth } from "#middleware/checkAuth.js";
-import { BoardShares } from "#models/BoardShares.js";
-import { Users } from "#models/Users.js";
+import { User } from "#models/Users.js";
 import { BoardShareUpdate } from "#types/api.js";
 
-export const sharesSubRouter = express.Router({ mergeParams: true });
+export const sharesSubRouter = Router({ mergeParams: true });
 
 sharesSubRouter.get("/", checkAuth(), async (req, res) => {
   const ALLOWED: BoardPermission[] = ["owner", "editor", "viewer"];
   const { id } = req.params;
 
-  const boardShareArr = await BoardShares.findAll({
+  const boardShareArr = await BoardShareTable.findAll({
     where: { boardId: id },
     include: {
-      model: Users,
+      model: User,
     },
   });
   if (!boardShareArr) {
@@ -56,7 +56,7 @@ sharesSubRouter.post("/", checkAuth(), async (req, res) => {
   const { userEmail } = req.body;
   const { id } = req.params;
 
-  if (!(await Boards.findByPk(id))) {
+  if (!(await BoardTable.findByPk(id))) {
     res.status(422).json({ error: "The specified board id does not exist!" });
     return;
   }
@@ -64,20 +64,20 @@ sharesSubRouter.post("/", checkAuth(), async (req, res) => {
     res.status(400).json({ error: "Missing parameter userEmail from the request" });
     return;
   }
-  const curBoardShare = await BoardShares.findOne({
+  const curBoardShare = await BoardShareTable.findOne({
     where: { boardId: id, userId: req.session.user?.id },
   });
   if (!curBoardShare || !ALLOWED.includes(curBoardShare.permission)) {
     res.status(403).json({ error: "You do not the authority to make this change" });
     return;
   }
-  const user = await Users.findOne({ where: { email: userEmail } });
+  const user = await User.findOne({ where: { email: userEmail } });
   if (!user) {
     res.status(422).json({ error: "The specified user does not exist!" });
     return;
   }
 
-  const boardShare = await BoardShares.findOne({
+  const boardShare = await BoardShareTable.findOne({
     where: {
       boardId: id,
       userId: user.userId,
@@ -88,8 +88,15 @@ sharesSubRouter.post("/", checkAuth(), async (req, res) => {
     return;
   }
 
+  // Limit to 5 other shares per board (6 including owner)
+  const shareCount = await BoardShareTable.count({ where: { boardId: id } });
+  if (shareCount >= 6) {
+    res.status(422).json({ error: "Board has reached maximum number of shares!" });
+    return;
+  }
+
   const startingPermission: Exclude<BoardPermission, "owner"> = "viewer";
-  const newShare = await BoardShares.create({
+  const newShare = await BoardShareTable.create({
     boardId: id,
     userId: user.userId,
     permission: startingPermission satisfies BoardPermission,
@@ -116,7 +123,7 @@ sharesSubRouter.post("/update", checkAuth(), async (req, res) => {
     return;
   }
 
-  const permCheck = await BoardShares.findOne({
+  const permCheck = await BoardShareTable.findOne({
     where: {
       boardId: id,
       userId: req.session.user?.id,
@@ -130,13 +137,13 @@ sharesSubRouter.post("/update", checkAuth(), async (req, res) => {
   const completed: BoardShareUpdate[] = [];
   for (const update of updates) {
     if (update.boardID !== Number(id)) continue;
-    const boardShare = await BoardShares.findOne({
+    const boardShare = await BoardShareTable.findOne({
       where: {
         boardId: id,
         userId: update.user.id,
       },
       include: {
-        model: Users,
+        model: User,
       },
     });
     if (!boardShare) continue;

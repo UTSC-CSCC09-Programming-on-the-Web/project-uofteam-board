@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { StripeCustomers } from "#models/StripeCustomers.js";
+import { StripeCustomer } from "#models/StripeCustomers.js";
 import AsyncLock from "async-lock";
 import { UrlLink, User } from "#types/api.js";
 const stripe = new Stripe(process.env.STRIPE_API_SECRET as string);
@@ -8,7 +8,7 @@ const SUBSCRIPTION_PRICE_ID = "price_1RovPKCuibBrJj0egxj3LP9J";
 
 const checkoutLock = new AsyncLock();
 export const create_checkout_session = async (user: User): Promise<UrlLink | null> => {
-  const stripeCustomer = await StripeCustomers.findByPk(user.id);
+  const stripeCustomer = await StripeCustomer.findByPk(user.id);
   if (stripeCustomer?.status === "active") {
     return null;
   }
@@ -60,7 +60,7 @@ export const create_checkout_session = async (user: User): Promise<UrlLink | nul
       stripeCustomer.checkoutId = session.id;
       await stripeCustomer.save();
     } else {
-      await StripeCustomers.create({
+      await StripeCustomer.create({
         userId: user.id,
         customerId: customerId,
         checkoutId: session.id,

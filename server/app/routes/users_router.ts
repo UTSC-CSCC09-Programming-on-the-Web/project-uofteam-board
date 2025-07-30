@@ -1,11 +1,12 @@
 import { Router } from "express";
-import { Users } from "#models/Users.js";
+import { User as UserTable } from "#models/Users.js";
 import type { UrlLink, User } from "#types/api.js";
 import { checkAuth, checkPaid } from "#middleware/checkAuth.js";
 import { getGoogleAuth, authParams, links } from "#services/googleoauth.js";
 import { SessionData } from "express-session";
 import { create_checkout_session } from "#services/stripecheckout.js";
 import { disconnectUserSocket } from "#ws/canvas.js";
+import { generateToken, getTokenFromState } from "#services/csrftoken.js";
 
 export const usersRouter = Router();
 
@@ -14,12 +15,20 @@ usersRouter.get("/me", checkAuth(false), async (req, res) => {
 });
 
 usersRouter.get("/me/picture", checkAuth(false), async (req, res) => {
-  const userInfo = await Users.findByPk(req.session.user?.id);
+  const userInfo = await UserTable.findByPk(req.session.user?.id);
   if (!userInfo) throw Error("Got authenticated request for non-existant user!");
   res.redirect(302, userInfo.pictureUrl);
 });
 
 usersRouter.get("/login/callback", async (req, res) => {
+  // Check state for CSRF
+  const csrfToken = req.query.state;
+  if (csrfToken !== getTokenFromState(req)) {
+    res.redirect(`${links.clientUrl}`);
+    console.error("Got Invalid CSRF Token from Ouath Callback", req.query);
+    return;
+  }
+
   const code = req.query.code?.toString();
   const data = await getGoogleAuth(code);
   if (!data) {
@@ -28,9 +37,9 @@ usersRouter.get("/login/callback", async (req, res) => {
   }
   const { email, name, picture } = data;
 
-  let user = await Users.findOne({ where: { email } });
+  let user = await UserTable.findOne({ where: { email } });
   if (!user) {
-    user = await Users.create({ name, email, pictureUrl: picture });
+    user = await UserTable.create({ name, email, pictureUrl: picture });
   }
 
   const paid = await checkPaid(user.userId);
@@ -53,7 +62,7 @@ usersRouter.get("/login/callback", async (req, res) => {
 
 usersRouter.get("/login", async (req, res) => {
   res.json({
-    url: `${links.authUrl}?${authParams}`,
+    url: `${links.authUrl}?${authParams(generateToken(req, true))}`,
   } satisfies UrlLink);
 });
 
@@ -62,12 +71,19 @@ usersRouter.post("/logout", checkAuth(false), async (req, res) => {
   if (!sessionUser) {
     throw new Error("No user session found for logout");
   }
-  delete req.session.user;
-  res.json({
-    id: sessionUser.id,
-    name: sessionUser.name,
-    email: sessionUser.email,
-  } satisfies User);
 
   disconnectUserSocket(sessionUser.id);
+  req.session.destroy((err) => {
+    if (err) {
+      res.clearCookie("connect.sid");
+      console.error("Failed to destory session!");
+      throw err;
+    } else {
+      res.json({
+        id: sessionUser.id,
+        name: sessionUser.name,
+        email: sessionUser.email,
+      } satisfies User);
+    }
+  });
 });

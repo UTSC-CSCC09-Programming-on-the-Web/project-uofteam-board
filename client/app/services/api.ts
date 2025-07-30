@@ -7,6 +7,7 @@ class ApiService {
   private readonly client: AxiosInstance;
   private socket: Socket | null = null;
   private boardID: number | null = null;
+  private csrfToken: string | null = null;
 
   constructor(baseURL: string) {
     this.client = axios.create({
@@ -29,7 +30,9 @@ class ApiService {
   }
 
   public postLogout(): Promise<Response<User>> {
-    return this.post("/auth/logout");
+    const response = this.post<User>("/auth/logout");
+    this.csrfToken = null;
+    return response;
   }
 
   public getMe(): Promise<Response<User>> {
@@ -164,7 +167,28 @@ class ApiService {
     return this.request<T>({ ...config, method: "patch", url, data });
   }
 
+  private async getCsrfToken() {
+    const token = await this.get<{ token: string }>("/csrf-token");
+    if (token?.data) {
+      this.csrfToken = token.data.token;
+    }
+  }
+
   private async request<T>(config: AxiosRequestConfig): Promise<Response<T>> {
+    if (config.method !== "get" && this.csrfToken === null) await this.getCsrfToken();
+    const res = await this.plainRequest<T>({
+      ...config,
+      headers: { "x-csrf-token": this.csrfToken },
+    });
+    if (res.status === 403) {
+      // Retry with new token (in case session expired)
+      await this.getCsrfToken();
+      return await this.plainRequest<T>({ ...config, headers: { "x-csrf-token": this.csrfToken } });
+    }
+    return res;
+  }
+
+  private async plainRequest<T>(config: AxiosRequestConfig): Promise<Response<T>> {
     try {
       const res = await this.client.request<T>(config);
       return { status: res.status, error: null, data: res.data };

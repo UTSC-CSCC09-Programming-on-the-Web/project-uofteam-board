@@ -1,8 +1,8 @@
 import { Model, DataTypes } from "sequelize";
 import { sequelize } from "#config/datasource.js";
-import { Users } from "./Users.js";
+import { User } from "./Users.js";
 
-export class StripeCustomers extends Model {
+export class StripeCustomer extends Model {
   declare userId: number;
   declare customerId: string;
   declare subscriptionId: string;
@@ -10,7 +10,7 @@ export class StripeCustomers extends Model {
   declare status: string;
 }
 
-StripeCustomers.init(
+StripeCustomer.init(
   {
     userId: {
       type: DataTypes.INTEGER,
@@ -44,10 +44,9 @@ StripeCustomers.init(
   },
   {
     sequelize,
-    modelName: "StripeCustomers",
     timestamps: true,
   },
 );
 
-StripeCustomers.belongsTo(Users, { foreignKey: "userId" });
-Users.hasMany(StripeCustomers, { sourceKey: "userId", foreignKey: "userId" });
+StripeCustomer.belongsTo(User, { foreignKey: "userId" });
+User.hasMany(StripeCustomer, { sourceKey: "userId", foreignKey: "userId" });

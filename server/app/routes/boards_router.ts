@@ -1,15 +1,33 @@
 import express from "express";
 import { Op } from "sequelize";
-import { Boards } from "#models/Boards.js";
+import { Board as BoardTable } from "#models/Boards.js";
 import type { Board, BoardPermission, Paginated, Path } from "#types/api.js";
 import { checkAuth } from "#middleware/checkAuth.js";
 import { render } from "#image-ai/render.js";
 import { main as aiModel } from "#image-ai/model.js";
 import { vectorizeBase64 } from "#image-ai/vectorize.js";
-import { BoardShares } from "#models/BoardShares.js";
+import { BoardShare } from "#models/BoardShares.js";
 import { getSetCachedPreview } from "#services/cachepreview.js";
+import AsyncLock from "async-lock";
 
 export const boardsRouter = express.Router();
+
+const checkValidBoardName = (res: express.Response, name: string): boolean => {
+  if (!/^[\w ]+$/i.test(name)) {
+    // Check Alphanumeric
+    res.status(422).json({ error: "Board name must be strictly alphanumeric" });
+    return false;
+  }
+  if (name.length < 3) {
+    res.status(422).json({ error: "Board name must have at least 3 characters" });
+    return false;
+  }
+  if (name.length > 60) {
+    res.status(422).json({ error: "Board name must have at least 3 characters" });
+    return false;
+  }
+  return true;
+};
 
 boardsRouter.post("/", checkAuth(), async (req, res) => {
   const { name } = req.body;
@@ -17,9 +35,13 @@ boardsRouter.post("/", checkAuth(), async (req, res) => {
     res.status(400).json({ error: "Board name is required" });
     return;
   }
+  if (!checkValidBoardName(res, name)) {
+    // Will handle the response
+    return;
+  }
 
-  const newBoard = await Boards.create({ name });
-  const newBoardShare = await BoardShares.create({
+  const newBoard = await BoardTable.create({ name });
+  const newBoardShare = await BoardShare.create({
     boardId: newBoard.boardId,
     userId: req.session.user?.id,
     permission: "owner",
@@ -39,12 +61,12 @@ boardsRouter.get("/", checkAuth(), async (req, res) => {
   const limit = parseInt(req.query.limit as string) || 8;
   const query = (req.query.query as string) || "";
 
-  const { count: totalItems, rows } = await BoardShares.findAndCountAll({
+  const { count: totalItems, rows } = await BoardShare.findAndCountAll({
     where: {
       userId: req.session.user?.id,
     },
     include: {
-      model: Boards,
+      model: BoardTable,
       ...(query && {
         where: {
           name: {
@@ -55,7 +77,7 @@ boardsRouter.get("/", checkAuth(), async (req, res) => {
     },
     offset: (page - 1) * limit,
     limit,
-    order: [[Boards, "createdAt", "DESC"]],
+    order: [[BoardTable, "createdAt", "DESC"]],
   });
 
   const totalPages = Math.ceil(totalItems / limit) || 1;
@@ -82,13 +104,13 @@ boardsRouter.get("/", checkAuth(), async (req, res) => {
 
 boardsRouter.get("/:id", checkAuth(), async (req, res) => {
   const { id } = req.params;
-  const board = await BoardShares.findOne({
+  const board = await BoardShare.findOne({
     where: {
       boardId: id,
       userId: req.session.user?.id,
     },
     include: {
-      model: Boards,
+      model: BoardTable,
     },
   });
   if (!board) {
@@ -108,7 +130,7 @@ boardsRouter.get("/:id", checkAuth(), async (req, res) => {
 
 boardsRouter.get("/:id/picture", checkAuth(), async (req, res) => {
   const { id } = req.params;
-  const board = await BoardShares.findOne({
+  const board = await BoardShare.findOne({
     where: {
       boardId: id,
       userId: req.session.user?.id,
@@ -135,8 +157,12 @@ boardsRouter.patch("/:id", checkAuth(), async (req, res) => {
     res.status(400).json({ error: "Board name is required" });
     return;
   }
+  if (!checkValidBoardName(res, name)) {
+    // Will handle the response
+    return;
+  }
 
-  const boardShare = await BoardShares.findOne({
+  const boardShare = await BoardShare.findOne({
     where: {
       boardId: id,
       userId: req.session.user?.id,
@@ -151,7 +177,7 @@ boardsRouter.patch("/:id", checkAuth(), async (req, res) => {
     return;
   }
 
-  const board = await Boards.findByPk(boardShare.boardId);
+  const board = await BoardTable.findByPk(boardShare.boardId);
   if (!board) throw Error("Board share referencing non-existant board!");
   board.name = name;
   await board.save();
@@ -169,7 +195,7 @@ boardsRouter.delete("/:id", checkAuth(), async (req, res) => {
   const ALLOWED: BoardPermission[] = ["owner"];
   const { id } = req.params;
 
-  const boardShare = await BoardShares.findOne({
+  const boardShare = await BoardShare.findOne({
     where: {
       boardId: id,
       userId: req.session.user?.id,
@@ -184,7 +210,7 @@ boardsRouter.delete("/:id", checkAuth(), async (req, res) => {
     return;
   }
 
-  const board = await Boards.findByPk(boardShare.boardId);
+  const board = await BoardTable.findByPk(boardShare.boardId);
   if (!board) throw Error("Board share referencing non-existant board!");
   await board.destroy();
 
@@ -197,10 +223,13 @@ boardsRouter.delete("/:id", checkAuth(), async (req, res) => {
   } satisfies Board);
 });
 
+const aiModelLock = new AsyncLock();
 boardsRouter.post("/:id/generative-fill", checkAuth(), async (req, res) => {
+  if (!req.session.user) throw new Error("Endpoint requiring authentication failed");
+
   const { pathIDs } = req.body;
   const { id } = req.params;
-  if (!id || !(await Boards.findByPk(id))) {
+  if (!id || !(await BoardTable.findByPk(id))) {
     res.status(404).json({ error: "Board not found" });
     return;
   }
@@ -209,14 +238,16 @@ boardsRouter.post("/:id/generative-fill", checkAuth(), async (req, res) => {
     return;
   }
 
-  try {
-    const renderedImg = await render(Number(id), pathIDs);
-    const newImgBase64 = await aiModel(renderedImg.base64);
-    const paths = await vectorizeBase64(newImgBase64);
-    res.json(paths satisfies Path[]);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to create new image" });
-    console.error("Error generating new image:", err);
-    return;
-  }
+  await aiModelLock.acquire(req.session.user.id.toString(), async () => {
+    try {
+      const renderedImg = await render(Number(id), pathIDs);
+      const newImgBase64 = await aiModel(renderedImg.base64);
+      const paths = await vectorizeBase64(newImgBase64);
+      res.json(paths satisfies Path[]);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to create new image" });
+      console.error("Error generating new image:", err);
+      return;
+    }
+  });
 });

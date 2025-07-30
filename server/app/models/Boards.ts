@@ -1,14 +1,14 @@
 import { Model, DataTypes } from "sequelize";
 import { sequelize } from "../config/datasource.js";
 
-export class Boards extends Model {
+export class Board extends Model {
   declare boardId: number;
   declare name: string;
   declare createdAt: Date;
   declare updatedAt: Date;
 }
 
-Boards.init(
+Board.init(
   {
     boardId: {
       type: DataTypes.INTEGER,
@@ -23,7 +23,6 @@ Boards.init(
   },
   {
     sequelize,
-    modelName: "Boards",
     timestamps: true,
   },
 );

@@ -1,17 +1,17 @@
 import { Model, DataTypes } from "sequelize";
 import { sequelize } from "../config/datasource.js";
 import { BoardPermission } from "#types/api.js";
-import { Boards } from "./Boards.js";
-import { Users } from "./Users.js";
+import { Board } from "./Boards.js";
+import { User } from "./Users.js";
 
-export class BoardShares extends Model {
+export class BoardShare extends Model {
   declare shareId: number;
   declare boardId: number;
   declare userId: number;
   declare permission: BoardPermission;
 }
 
-BoardShares.init(
+BoardShare.init(
   {
     shareId: {
       type: DataTypes.INTEGER,
@@ -42,7 +42,6 @@ BoardShares.init(
   },
   {
     sequelize,
-    modelName: "BoardShares",
     timestamps: true,
     indexes: [
       {
@@ -53,8 +52,8 @@ BoardShares.init(
   },
 );
 
-BoardShares.belongsTo(Boards, { foreignKey: "boardId", onDelete: "CASCADE", hooks: true });
-Boards.hasMany(BoardShares, { sourceKey: "boardId", foreignKey: "boardId" });
+BoardShare.belongsTo(Board, { foreignKey: "boardId", onDelete: "CASCADE", hooks: true });
+Board.hasMany(BoardShare, { sourceKey: "boardId", foreignKey: "boardId" });
 
-BoardShares.belongsTo(Users, { foreignKey: "userId" });
-Users.hasMany(BoardShares, { sourceKey: "userId", foreignKey: "userId" });
+BoardShare.belongsTo(User, { foreignKey: "userId" });
+User.hasMany(BoardShare, { sourceKey: "userId", foreignKey: "userId" });
