@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Layer, Stage, Path as KonvaPath, Rect } from "react-konva";
 import { MdChevronLeft, MdChevronRight, MdRefresh } from "react-icons/md";
 import colors from "tailwindcss/colors";
+import toast from "react-hot-toast";
 import clsx from "clsx";
 
 import { API } from "~/services";
@@ -62,7 +63,7 @@ function GenFillDialog({ state, onConfirm, onClose }: GenFillDialogProps) {
       state.paths.map((p) => p.id),
     );
     if (res.error !== null) {
-      alert(`Error generating fill: ${res.error}`);
+      toast(`Error generating fill:\n ${res.error}`);
       setLoading(false);
       return;
     }
@@ -126,7 +127,7 @@ function GenFillDialog({ state, onConfirm, onClose }: GenFillDialogProps) {
   const totalGenerations = generations.length;
 
   return (
-    <Dialog open={state !== null} onClose={onClose} className="max-w-lg">
+    <Dialog open={state !== null} className="max-w-lg">
       <Dialog.Title>Generative Fill</Dialog.Title>
       <Dialog.Content>
         {loading || !currentGeneration?.paths.length ? (

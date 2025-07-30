@@ -85,7 +85,7 @@ function ExportDialog({ paths, onClose }: ExportDialogProps) {
   };
 
   return (
-    <Dialog open={paths.length > 0} onClose={onClose}>
+    <Dialog open={paths.length > 0}>
       <Dialog.Title>Export to Image</Dialog.Title>
       <Dialog.Content>
         <div

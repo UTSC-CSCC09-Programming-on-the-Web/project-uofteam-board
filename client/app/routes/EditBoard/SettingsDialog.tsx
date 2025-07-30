@@ -1,4 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router";
+import { MdDelete } from "react-icons/md";
+import toast from "react-hot-toast";
+
 import type { Board, BoardShare, BoardShareUpdate } from "~/types";
 import { Button, Dialog, Select, TextInput } from "~/components";
 import { API } from "~/services";
@@ -12,12 +16,14 @@ interface SettingsDialogProps {
 }
 
 function SettingsDialog({ open, board, shares, onClose, onUpdate }: SettingsDialogProps) {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [shareUpdates, setShareUpdates] = useState<BoardShareUpdate[]>([]);
   const [submittingAddShare, setSubmittingAddShare] = useState(false);
   const [submittingDialog, setSubmittingDialog] = useState(false);
-  const loading = submittingAddShare || submittingDialog;
+  const [deletingBoard, setDeletingBoard] = useState(false);
+  const loading = submittingAddShare || submittingDialog || deletingBoard;
 
   useEffect(() => {
     if (!open) return;
@@ -33,13 +39,13 @@ function SettingsDialog({ open, board, shares, onClose, onUpdate }: SettingsDial
     try {
       const updatedBoard = await API.renameBoard(board.id, name);
       if (updatedBoard.error !== null) {
-        alert(`Error updating board: ${updatedBoard.error}`);
+        toast(`Error updating board name:\n ${updatedBoard.error}`);
         return;
       }
 
       const updatedShares = await API.updateBoardShares(board.id, shareUpdates);
       if (updatedShares.error !== null) {
-        alert(`Error updating board shares: ${updatedShares.error}`);
+        toast(`Error updating board shares:\n ${updatedShares.error}`);
         return;
       }
 
@@ -57,7 +63,7 @@ function SettingsDialog({ open, board, shares, onClose, onUpdate }: SettingsDial
     try {
       const res = await API.shareBoard(board.id, email);
       if (res.error !== null) {
-        alert(`Error sharing board: ${res.error}`);
+        toast(`Error sharing board with :\n ${res.error}`);
         return;
       }
 
@@ -68,11 +74,36 @@ function SettingsDialog({ open, board, shares, onClose, onUpdate }: SettingsDial
     }
   };
 
+  const handleDeleteBoard = async () => {
+    if (!board || !confirm("You sure you want to delete this board?")) return;
+
+    setDeletingBoard(true);
+    const res = await API.deleteBoard(board.id);
+    if (res.error !== null) {
+      toast(`Error deleting board:\n ${res.error}`);
+      setDeletingBoard(false);
+      return;
+    }
+
+    toast("Board deleted successfully.");
+    navigate("/dashboard");
+  };
+
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog open={open}>
       <Dialog.Title>Settings</Dialog.Title>
       <Dialog.Content>
-        <div>
+        <Button
+          size="sm"
+          variant="danger"
+          icon={<MdDelete />}
+          onClick={handleDeleteBoard}
+          loading={deletingBoard}
+          disabled={loading}
+        >
+          Delete Board
+        </Button>
+        <div className="mt-4">
           <h6 className="text-lg font-bold mb-1">Board name</h6>
           <TextInput
             onChange={(e) => setName(e.target.value)}
@@ -136,6 +167,9 @@ function SettingsDialog({ open, board, shares, onClose, onUpdate }: SettingsDial
         </div>
       </Dialog.Content>
       <Dialog.Footer>
+        <Dialog.Button variant="neutral" onClick={onClose} size="sm" disabled={loading}>
+          Cancel
+        </Dialog.Button>
         <Dialog.Button onClick={handleSave} size="sm" disabled={loading} loading={submittingDialog}>
           Done
         </Dialog.Button>

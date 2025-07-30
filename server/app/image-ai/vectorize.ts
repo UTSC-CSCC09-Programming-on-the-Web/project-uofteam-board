@@ -71,12 +71,3 @@ export const vectorizeBase64 = async (base64: string): Promise<Path[]> => {
 
   return convertSvgToPaths(svg);
 };
-
-// TODO: cleanup
-// import { render, renderPaths } from "./render";
-// const img = fs.readFileSync("./dump/ai_1752286370064.png");
-// const paths = await vectorizeBase64(img.toString('base64'));
-// renderPaths(paths);
-// console.log(paths);
-
-// console.log(detectBackgroundHexColor("#03c100"));

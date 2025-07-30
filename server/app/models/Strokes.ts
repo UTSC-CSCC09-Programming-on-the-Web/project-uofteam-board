@@ -1,5 +1,6 @@
 import { Model, DataTypes } from "sequelize";
-import { sequelize } from "../datasource.js";
+import { sequelize } from "../config/datasource.js";
+import { Boards } from "./Boards.js";
 
 export class Strokes extends Model {
   declare strokeId: string;
@@ -76,3 +77,6 @@ Strokes.init(
     timestamps: false,
   },
 );
+
+Strokes.belongsTo(Boards, { foreignKey: "boardId", onDelete: "CASCADE", hooks: true });
+Boards.hasMany(Strokes, { sourceKey: "boardId", foreignKey: "boardId" });

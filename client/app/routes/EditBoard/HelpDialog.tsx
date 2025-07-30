@@ -7,7 +7,7 @@ interface HelpDialogProps {
 
 function HelpDialog({ open, onClose }: HelpDialogProps) {
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog open={open}>
       <Dialog.Title>Help</Dialog.Title>
       <Dialog.Content>
         <span>
