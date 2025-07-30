@@ -15,7 +15,7 @@ interface SettingsDialogProps {
   onUpdate: (board: Board, boardShares: BoardShare[]) => void;
 }
 
-function SettingsDialog({ open, board, shares, onClose, onUpdate }: SettingsDialogProps) {
+const SettingsDialog = ({ open, board, shares, onClose, onUpdate }: SettingsDialogProps) => {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -176,6 +176,6 @@ function SettingsDialog({ open, board, shares, onClose, onUpdate }: SettingsDial
       </Dialog.Footer>
     </Dialog>
   );
-}
+};
 
 export { SettingsDialog, type SettingsDialogProps };

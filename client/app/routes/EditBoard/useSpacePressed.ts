@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-function useSpacePressed(): boolean {
+const useSpacePressed = (): boolean => {
   const [spacePressed, setSpacePressed] = useState(false);
 
   useEffect(() => {
@@ -22,6 +22,6 @@ function useSpacePressed(): boolean {
   }, []);
 
   return spacePressed;
-}
+};
 
 export { useSpacePressed };

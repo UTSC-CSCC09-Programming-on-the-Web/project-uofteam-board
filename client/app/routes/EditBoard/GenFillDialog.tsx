@@ -31,27 +31,25 @@ const previewPadding = 20;
 const previewHeight = 300;
 const previewWidth = 400;
 
-function ActionButton({
+const ActionButton = ({
   icon,
   className,
   ...rest
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
   icon: React.ReactNode;
-}) {
-  return (
-    <button
-      {...rest}
-      className={clsx(
-        "flex justify-center items-center size-8 text-2xl rounded-lg text-gray-500 cursor-pointer hover:bg-gray-200 disabled:bg-transparent disabled:opacity-50 disabled:cursor-default",
-        className,
-      )}
-    >
-      {icon}
-    </button>
-  );
-}
+}) => (
+  <button
+    {...rest}
+    className={clsx(
+      "flex justify-center items-center size-8 text-2xl rounded-lg text-gray-500 cursor-pointer hover:bg-gray-200 disabled:bg-transparent disabled:opacity-50 disabled:cursor-default",
+      className,
+    )}
+  >
+    {icon}
+  </button>
+);
 
-function GenFillDialog({ state, onConfirm, onClose }: GenFillDialogProps) {
+const GenFillDialog = ({ state, onConfirm, onClose }: GenFillDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [generations, setGenerations] = useState<Generation[]>([]);
@@ -210,6 +208,6 @@ function GenFillDialog({ state, onConfirm, onClose }: GenFillDialogProps) {
       </Dialog.Footer>
     </Dialog>
   );
-}
+};
 
 export { GenFillDialog, type GenFillDialogState, type GenFillDialogProps };

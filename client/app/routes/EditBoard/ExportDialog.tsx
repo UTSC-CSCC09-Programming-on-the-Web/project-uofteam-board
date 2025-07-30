@@ -18,7 +18,7 @@ const previewPadding = 20;
 const previewHeight = 300;
 const previewWidth = 400;
 
-function ExportDialog({ paths, onClose }: ExportDialogProps) {
+const ExportDialog = ({ paths, onClose }: ExportDialogProps) => {
   const [backgroundColor, setBackgroundColor] = useState("#f3f3f3");
 
   const previewTransform = useMemo<Transform>(() => {
@@ -140,6 +140,6 @@ function ExportDialog({ paths, onClose }: ExportDialogProps) {
       </Dialog.Footer>
     </Dialog>
   );
-}
+};
 
 export { ExportDialog, type ExportDialogProps };
